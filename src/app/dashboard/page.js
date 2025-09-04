@@ -78,9 +78,9 @@ export default function Dashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-onyx mb-2">Submit Complaint</h3>
+            <h3 className="text-xl font-bold text-onyx mb-2">Submit Feedback</h3>
             <p className="text-gray-600 mb-4">File a new citizen complaint and transform it into a professional document</p>
-            <Link href="/submit-complaint">
+            <Link href="/submit-feedback">
               <button className="bg-emerald hover:bg-sage text-white px-4 py-2 rounded-lg font-medium transition-colors">
                 New Complaint
               </button>
@@ -113,6 +113,21 @@ export default function Dashboard() {
             <Link href="/verification">
               <button className="bg-sage hover:bg-emerald text-white px-4 py-2 rounded-lg font-medium transition-colors">
                 View Proofs
+              </button>
+            </Link>
+          </div>
+
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-8 border border-gray-100 shadow-lg">
+            <div className="w-12 h-12 bg-forest rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-onyx mb-2">AI Clusters</h3>
+            <p className="text-gray-600 mb-4">View how similar complaints are grouped by AI</p>
+            <Link href="/clusters">
+              <button className="bg-forest hover:bg-jungle text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                View Clusters
               </button>
             </Link>
           </div>
