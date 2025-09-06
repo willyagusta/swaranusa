@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { clusteringService } from '@/lib/ollama';
+import { blockchainService } from '@/lib/blockchain';
 import { verifyToken } from '@/lib/auth';
 
 const sql = neon(process.env.DATABASE_URL);
@@ -115,11 +116,77 @@ export async function POST(request) {
       `;
     }
 
+    // BLOCKCHAIN VERIFICATION - This happens in background
+    let blockchainResult = null;
+    try {
+      // Create blockchain verification asynchronously
+      const feedbackForBlockchain = {
+        id: newFeedback.id,
+        userId: decoded.userId,
+        title: newFeedback.title,
+        content: newFeedback.content,
+        createdAt: newFeedback.created_at
+      };
+
+      blockchainResult = await blockchainService.verifyFeedback(feedbackForBlockchain);
+      
+      // Update feedback with blockchain hash
+      await sql`
+        UPDATE feedbacks 
+        SET blockchain_hash = ${blockchainResult.transactionHash},
+            blockchain_verified = true,
+            verification_data = ${JSON.stringify({
+              blockNumber: blockchainResult.blockNumber,
+              blockTimestamp: blockchainResult.blockTimestamp,
+              gasUsed: blockchainResult.gasUsed,
+              networkName: blockchainResult.networkName,
+              feedbackHash: blockchainResult.feedbackHash
+            })}
+        WHERE id = ${newFeedback.id}
+      `;
+
+      // Log blockchain verification
+      await sql`
+        INSERT INTO blockchain_verifications (
+          feedback_id, transaction_hash, block_number, block_timestamp,
+          gas_used, network_name, verification_status
+        )
+        VALUES (
+          ${newFeedback.id},
+          ${blockchainResult.transactionHash},
+          ${blockchainResult.blockNumber},
+          ${blockchainResult.blockTimestamp},
+          ${blockchainResult.gasUsed},
+          ${blockchainResult.networkName},
+          'confirmed'
+        )
+      `;
+
+    } catch (blockchainError) {
+      console.error('Blockchain verification failed:', blockchainError);
+      // Don't fail the entire request if blockchain fails
+      // Log the error for later retry
+      await sql`
+        UPDATE feedbacks 
+        SET blockchain_verified = false,
+            verification_data = ${JSON.stringify({ error: blockchainError.message })}
+        WHERE id = ${newFeedback.id}
+      `;
+    }
+
     return NextResponse.json({
       success: true,
       feedback: newFeedback,
       clusterId,
-      processed
+      processed,
+      blockchain: blockchainResult ? {
+        verified: true,
+        transactionHash: blockchainResult.transactionHash,
+        verificationUrl: blockchainService.generateVerificationUrl(
+          blockchainResult.transactionHash, 
+          blockchainResult.networkName
+        )
+      } : { verified: false, error: 'Blockchain verification pending' }
     });
 
   } catch (error) {

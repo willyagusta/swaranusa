@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, serial, integer, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, serial, integer, jsonb, boolean } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -35,6 +35,24 @@ export const feedbacks = pgTable('feedbacks', {
   location: text('location'),
   tags: jsonb('tags'), // Array of extracted tags
   sentiment: text('sentiment'), // positive, negative, neutral
+  // Blockchain verification fields
+  blockchainHash: text('blockchain_hash'), // Transaction hash on blockchain
+  blockchainVerified: boolean('blockchain_verified').default(false),
+  verificationData: jsonb('verification_data'), // Contains block number, timestamp, etc.
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// New table for blockchain verification logs
+export const blockchainVerifications = pgTable('blockchain_verifications', {
+  id: serial('id').primaryKey(),
+  feedbackId: integer('feedback_id').notNull().references(() => feedbacks.id),
+  transactionHash: text('transaction_hash').notNull(),
+  blockNumber: integer('block_number'),
+  blockTimestamp: timestamp('block_timestamp'),
+  gasUsed: text('gas_used'),
+  networkName: text('network_name').default('ethereum'),
+  verificationStatus: text('verification_status').default('pending'), // pending, confirmed, failed
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
