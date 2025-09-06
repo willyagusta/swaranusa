@@ -1,0 +1,177 @@
+import { NextResponse } from 'next/server';
+import { neon } from '@neondatabase/serverless';
+import { verifyToken } from '@/lib/auth';
+import { reportGenerator } from '@/lib/reportGenerator';
+
+const sql = neon(process.env.DATABASE_URL);
+
+export async function GET(request) {
+  try {
+    // Verify government user authentication
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Check if user is government official (you'll need to add role check)
+    const [user] = await sql`
+      SELECT role FROM users WHERE id = ${decoded.userId}
+    `;
+
+    if (!user || user.role !== 'government') {
+      return NextResponse.json({ error: 'Access denied. Government access required.' }, { status: 403 });
+    }
+
+    const url = new URL(request.url);
+    const category = url.searchParams.get('category');
+    const location = url.searchParams.get('location');
+
+    // Get all existing reports or filter by category/location
+    let reports;
+
+    if (category && location) {
+      reports = await sql`
+        SELECT * FROM government_reports
+        WHERE category = ${category} AND location = ${location}
+        ORDER BY created_at DESC
+      `;
+    } else if (category) {
+      reports = await sql`
+        SELECT * FROM government_reports
+        WHERE category = ${category}
+        ORDER BY created_at DESC
+      `;
+    } else if (location) {
+      reports = await sql`
+        SELECT * FROM government_reports
+        WHERE location = ${location}
+        ORDER BY created_at DESC
+      `;
+    } else {
+      // Get all reports
+      reports = await sql`
+        SELECT * FROM government_reports
+        ORDER BY created_at DESC
+      `;
+    }
+
+    // Add deduplication based on ID (most reliable)
+    const uniqueReports = reports.filter((report, index, self) => 
+      index === self.findIndex(r => r.id === report.id)
+    );
+
+    return NextResponse.json({
+      success: true,
+      reports: uniqueReports // Use deduplicated reports
+    });
+
+  } catch (error) {
+    console.error('Government reports error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch reports' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request) {
+  try {
+    // Verify government user authentication
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Check if user is government official
+    const [user] = await sql`
+      SELECT role FROM users WHERE id = ${decoded.userId}
+    `;
+
+    if (!user || user.role !== 'government') {
+      return NextResponse.json({ error: 'Access denied. Government access required.' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { category, location } = body;
+
+    if (!category || !location) {
+      return NextResponse.json(
+        { error: 'Category and location are required' },
+        { status: 400 }
+      );
+    }
+
+    // Get feedbacks for the specified category and location
+    const feedbacks = await sql`
+      SELECT 
+        f.*,
+        u.first_name,
+        u.last_name
+      FROM feedbacks f
+      JOIN users u ON f.user_id = u.id
+      WHERE f.category = ${category} 
+      AND f.location = ${location}
+      ORDER BY f.created_at DESC
+    `;
+
+    if (feedbacks.length === 0) {
+      return NextResponse.json(
+        { error: 'No feedbacks found for the specified category and location' },
+        { status: 404 }
+      );
+    }
+
+    // Generate AI report
+    const reportData = await reportGenerator.generateReport(feedbacks, category, location);
+
+    // Save report to database
+    const [newReport] = await sql`
+      INSERT INTO government_reports (
+        title, category, location, report_content, executive_summary,
+        key_findings, recommendations, feedback_ids, total_feedbacks,
+        sentiment_breakdown, urgency_breakdown, generated_by, status
+      )
+      VALUES (
+        ${reportData.title},
+        ${reportData.category},
+        ${reportData.location},
+        ${reportData.reportContent},
+        ${reportData.executiveSummary},
+        ${JSON.stringify(reportData.keyFindings)},
+        ${JSON.stringify(reportData.recommendations)},
+        ${JSON.stringify(reportData.feedbackIds)},
+        ${reportData.totalFeedbacks},
+        ${JSON.stringify(reportData.sentimentBreakdown)},
+        ${JSON.stringify(reportData.urgencyBreakdown)},
+        ${decoded.userId},
+        ${reportData.status}
+      )
+      RETURNING *
+    `;
+
+    return NextResponse.json({
+      success: true,
+      report: newReport,
+      message: `Report generated successfully with ${feedbacks.length} feedbacks`
+    });
+
+  } catch (error) {
+    console.error('Generate report error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate report' },
+      { status: 500 }
+    );
+  }
+}
+
+

@@ -6,6 +6,9 @@ export const users = pgTable('users', {
   password: text('password').notNull(),
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),
+  role: text('role').default('citizen'), // citizen, government, admin
+  department: text('department'), // For government users
+  position: text('position'), // For government users
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
@@ -43,7 +46,6 @@ export const feedbacks = pgTable('feedbacks', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-// New table for blockchain verification logs
 export const blockchainVerifications = pgTable('blockchain_verifications', {
   id: serial('id').primaryKey(),
   feedbackId: integer('feedback_id').notNull().references(() => feedbacks.id),
@@ -53,6 +55,25 @@ export const blockchainVerifications = pgTable('blockchain_verifications', {
   gasUsed: text('gas_used'),
   networkName: text('network_name').default('ethereum'),
   verificationStatus: text('verification_status').default('pending'), // pending, confirmed, failed
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const governmentReports = pgTable('government_reports', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  category: text('category').notNull(),
+  location: text('location').notNull(),
+  reportContent: text('report_content').notNull(), // AI-generated formal report
+  executiveSummary: text('executive_summary').notNull(),
+  keyFindings: jsonb('key_findings'), // Array of key findings
+  recommendations: jsonb('recommendations'), // Array of recommendations
+  feedbackIds: jsonb('feedback_ids'), // Array of feedback IDs included in this report
+  totalFeedbacks: integer('total_feedbacks').notNull(),
+  sentimentBreakdown: jsonb('sentiment_breakdown'), // {positive: X, negative: Y, neutral: Z}
+  urgencyBreakdown: jsonb('urgency_breakdown'), // {low: X, medium: Y, high: Z}
+  generatedBy: integer('generated_by').references(() => users.id), // Who generated the report
+  status: text('status').default('draft'), // draft, published, archived
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
