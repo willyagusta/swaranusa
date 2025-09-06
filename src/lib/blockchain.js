@@ -12,19 +12,9 @@ class BlockchainVerificationService {
     if (this.initialized) return;
 
     try {
-      const rpcUrl = process.env.SEPOLIA_URL || 'https://eth-sepolia.g.alchemy.com/v2/UEKumhN9FA36Sq5aHea3FEY67EZdWU4k';
-      
-      // Alternative free Sepolia RPC endpoints (no API key required)
-      const freeSepoliaRPCs = [
-        'https://ethereum-sepolia-rpc.publicnode.com',
-        'https://sepolia.gateway.tenderly.co',
-        'https://rpc.sepolia.org',
-        'https://rpc2.sepolia.org'
-      ];
-      
-      // Use environment variable or fall back to free public RPC
-      const finalRpcUrl = process.env.SEPOLIA_URL || freeSepoliaRPCs[0];
-      this.provider = new ethers.JsonRpcProvider(finalRpcUrl);
+      // Use Sepolia Ethereum testnet
+      const rpcUrl = process.env.SEPOLIA_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
+      this.provider = new ethers.JsonRpcProvider(rpcUrl);
 
       // Your admin wallet private key (keep this secure!)
       const privateKey = process.env.ADMIN_WALLET_PRIVATE_KEY;
@@ -38,21 +28,24 @@ class BlockchainVerificationService {
       const network = await this.provider.getNetwork();
       console.log(`Connected to network: ${network.name} (Chain ID: ${network.chainId})`);
       
-      if (network.chainId !== 11155111n) { // Sepolia chain ID
-        console.warn(`Warning: Expected Sepolia (11155111) but connected to chain ${network.chainId}`);
-      }
-      
-      // Simple contract for storing feedback hashes (optional)
+      // Smart contract setup (if deployed)
       const contractAddress = process.env.FEEDBACK_CONTRACT_ADDRESS;
-      const contractABI = [
-        "function storeFeedbackHash(string memory feedbackHash, uint256 timestamp) public returns (uint256)",
-        "function getFeedbackVerification(uint256 verificationId) public view returns (string memory, uint256, address)",
-        "function verifyFeedbackHash(string memory feedbackHash) public view returns (bool, uint256, address)",
-        "event FeedbackStored(uint256 indexed verificationId, string feedbackHash, uint256 timestamp, address verifier)"
-      ];
-
       if (contractAddress) {
+        const contractABI = [
+          "function storeFeedbackHash(string memory feedbackHash, uint256 feedbackId, uint256 timestamp) public returns (uint256)",
+          "function getFeedbackVerification(uint256 verificationId) public view returns (string memory, uint256, uint256, address)",
+          "function verifyFeedbackHash(string memory feedbackHash) public view returns (bool, uint256, uint256, address)",
+          "function getTotalVerifications() public view returns (uint256)",
+          "function getContractInfo() public view returns (address, uint256, uint256)",
+          "function transferOwnership(address newOwner) public",
+          "event FeedbackStored(uint256 indexed verificationId, string indexed feedbackHash, uint256 feedbackId, uint256 timestamp, address verifier)",
+          "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)"
+        ];
+        
         this.contract = new ethers.Contract(contractAddress, contractABI, this.wallet);
+        console.log('Smart contract connected:', contractAddress);
+      } else {
+        console.log('No contract address provided, using fallback method');
       }
 
       this.initialized = true;
@@ -80,42 +73,66 @@ class BlockchainVerificationService {
 
     try {
       const feedbackHash = this.createFeedbackHash(feedbackData);
-      const timestamp = Math.floor(Date.now() / 1000);
+      const timestamp = Math.floor(new Date(feedbackData.createdAt).getTime() / 1000);
 
-      let transactionHash, blockNumber, blockTimestamp, gasUsed;
+      let transactionHash, blockNumber, blockTimestamp, gasUsed, verificationId;
+
+      // Check wallet balance
+      const balance = await this.provider.getBalance(this.wallet.address);
+      if (balance === 0n) {
+        throw new Error('Insufficient balance. Get free Sepolia ETH from: https://sepoliafaucet.com/');
+      }
 
       if (this.contract) {
-        // Use smart contract method
-        console.log('Using smart contract to store feedback hash...');
-        const tx = await this.contract.storeFeedbackHash(feedbackHash, timestamp, {
-          gasLimit: 100000 // Set reasonable gas limit for Sepolia
-        });
+        // Use smart contract method (preferred)
+        console.log('Storing feedback hash using smart contract...');
+        
+        const tx = await this.contract.storeFeedbackHash(
+          feedbackHash, 
+          feedbackData.id, 
+          timestamp,
+          { gasLimit: 500000 }
+        );
+        
+        console.log(`Transaction sent: ${tx.hash}`);
         const receipt = await tx.wait();
+        console.log(`Transaction confirmed in block: ${receipt.blockNumber}`);
+        
+        // Extract verification ID from event
+        const event = receipt.logs.find(log => {
+          try {
+            const parsed = this.contract.interface.parseLog(log);
+            return parsed.name === 'FeedbackStored';
+          } catch {
+            return false;
+          }
+        });
+        
+        if (event) {
+          const parsed = this.contract.interface.parseLog(event);
+          verificationId = parsed.args[0].toString();
+        }
         
         transactionHash = receipt.hash;
         blockNumber = receipt.blockNumber;
         gasUsed = receipt.gasUsed.toString();
         
-        // Get block timestamp
         const block = await this.provider.getBlock(receipt.blockNumber);
         blockTimestamp = new Date(block.timestamp * 1000);
+        
       } else {
-        // Fallback: Store hash in transaction data (simpler approach)
-        console.log('Using transaction data to store feedback hash...');
+        // Fallback: Store hash in transaction data
+        console.log('Storing feedback hash using transaction data...');
         
-        // Check wallet balance before transaction
-        const balance = await this.provider.getBalance(this.wallet.address);
-        console.log(`Wallet balance: ${ethers.formatEther(balance)} ETH`);
-        
-        if (balance === 0n) {
-          throw new Error('Insufficient balance. Please add Sepolia ETH to your wallet. Get free ETH from: https://sepoliafaucet.com/');
-        }
-
         const tx = await this.wallet.sendTransaction({
           to: this.wallet.address, // Send to self
-          value: 0, // No ETH transfer, just data
-          data: ethers.hexlify(ethers.toUtf8Bytes(feedbackHash)),
-          gasLimit: 21000 + (feedbackHash.length * 16) // Base gas + data gas
+          value: 0,
+          data: ethers.hexlify(ethers.toUtf8Bytes(JSON.stringify({
+            feedbackHash,
+            feedbackId: feedbackData.id,
+            timestamp
+          }))),
+          gasLimit: 30000
         });
         
         console.log(`Transaction sent: ${tx.hash}`);
@@ -136,17 +153,14 @@ class BlockchainVerificationService {
         blockTimestamp,
         gasUsed,
         feedbackHash,
-        networkName: await this.getNetworkName()
+        verificationId,
+        networkName: 'sepolia'
       };
     } catch (error) {
       console.error('Blockchain verification failed:', error);
       
-      // Provide helpful error messages for common issues
       if (error.message.includes('insufficient funds')) {
         throw new Error('Insufficient Sepolia ETH. Get free test ETH from: https://sepoliafaucet.com/');
-      }
-      if (error.message.includes('nonce')) {
-        throw new Error('Transaction nonce error. Please try again.');
       }
       
       throw error;
@@ -179,12 +193,33 @@ class BlockchainVerificationService {
     }
   }
 
+  // Check if feedback hash exists in smart contract
+  async checkFeedbackHash(feedbackHash) {
+    await this.initialize();
+    
+    if (!this.contract) {
+      return { exists: false, error: 'Smart contract not available' };
+    }
+
+    try {
+      const result = await this.contract.verifyFeedbackHash(feedbackHash);
+      return {
+        exists: result[0],
+        verificationId: result[1].toString(),
+        timestamp: new Date(result[2].toNumber() * 1000),
+        verifier: result[3]
+      };
+    } catch (error) {
+      console.error('Hash verification failed:', error);
+      return { exists: false, error: error.message };
+    }
+  }
+
   async getNetworkName() {
     const network = await this.provider.getNetwork();
     return network.name;
   }
 
-  // Get wallet info for debugging
   async getWalletInfo() {
     await this.initialize();
     
@@ -196,21 +231,13 @@ class BlockchainVerificationService {
       address,
       balance: ethers.formatEther(balance),
       networkName: network.name,
-      chainId: network.chainId.toString()
+      chainId: network.chainId.toString(),
+      hasContract: !!this.contract
     };
   }
 
-  // Generate verification URL for users
   generateVerificationUrl(transactionHash, networkName = 'sepolia') {
-    const explorers = {
-      ethereum: `https://etherscan.io/tx/${transactionHash}`,
-      mainnet: `https://etherscan.io/tx/${transactionHash}`,
-      sepolia: `https://sepolia.etherscan.io/tx/${transactionHash}`,
-      polygon: `https://polygonscan.com/tx/${transactionHash}`,
-      goerli: `https://goerli.etherscan.io/tx/${transactionHash}`
-    };
-    
-    return explorers[networkName] || explorers.sepolia;
+    return `https://sepolia.etherscan.io/tx/${transactionHash}`;
   }
 }
 
