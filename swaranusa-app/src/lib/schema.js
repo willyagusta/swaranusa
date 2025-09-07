@@ -38,12 +38,28 @@ export const feedbacks = pgTable('feedbacks', {
   location: text('location'),
   tags: jsonb('tags'), // Array of extracted tags
   sentiment: text('sentiment'), // positive, negative, neutral
+  // NEW: Status tracking fields
+  status: text('status').default('belum_dilihat'), // belum_dilihat, dilihat, masuk_daftar_bahasan, dirapatkan, ditindak_lanjuti, selesai
+  statusUpdatedBy: integer('status_updated_by').references(() => users.id), // Government user who updated status
+  statusUpdatedAt: timestamp('status_updated_at'),
+  statusNote: text('status_note'), // Optional note when updating status
   // Blockchain verification fields
   blockchainHash: text('blockchain_hash'), // Transaction hash on blockchain
   blockchainVerified: boolean('blockchain_verified').default(false),
   verificationData: jsonb('verification_data'), // Contains block number, timestamp, etc.
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// NEW: Feedback status history table
+export const feedbackStatusHistory = pgTable('feedback_status_history', {
+  id: serial('id').primaryKey(),
+  feedbackId: integer('feedback_id').notNull().references(() => feedbacks.id),
+  oldStatus: text('old_status'),
+  newStatus: text('new_status').notNull(),
+  updatedBy: integer('updated_by').notNull().references(() => users.id),
+  note: text('note'),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 export const blockchainVerifications = pgTable('blockchain_verifications', {

@@ -159,10 +159,61 @@ export async function POST(request) {
       RETURNING *
     `;
 
+    // Get current user info
+    const [currentUser] = await sql`
+      SELECT first_name, last_name, department FROM users WHERE id = ${decoded.userId}
+    `;
+
+    // Update all included feedbacks status to "dilihat" if they were "belum_dilihat"
+    const feedbackIds = reportData.feedbackIds;
+    
+    if (feedbackIds && feedbackIds.length > 0) {
+      // Create the status note properly
+      const statusNote = `Feedback dimasukkan dalam laporan: ${reportData.title}`;
+      
+      // Update feedbacks that are currently "belum_dilihat" to "dilihat"
+      await sql`
+        UPDATE feedbacks 
+        SET 
+          status = 'dilihat',
+          status_updated_by = ${decoded.userId},
+          status_updated_at = NOW(),
+          status_note = ${statusNote},
+          updated_at = NOW()
+        WHERE id = ANY(${feedbackIds}) 
+        AND status = 'belum_dilihat'
+      `;
+
+      // Add status history for updated feedbacks
+      // First, get the feedbacks that were actually updated
+      const updatedFeedbacks = await sql`
+        SELECT id FROM feedbacks 
+        WHERE id = ANY(${feedbackIds}) 
+        AND status = 'dilihat'
+        AND status_updated_by = ${decoded.userId}
+        AND status_updated_at >= NOW() - INTERVAL '1 minute'
+      `;
+
+      // Add history entries for each updated feedback
+      for (const feedback of updatedFeedbacks) {
+        await sql`
+          INSERT INTO feedback_status_history (feedback_id, old_status, new_status, updated_by, note)
+          VALUES (
+            ${feedback.id},
+            'belum_dilihat',
+            'dilihat',
+            ${decoded.userId},
+            ${statusNote}
+          )
+        `;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       report: newReport,
-      message: `Report generated successfully with ${feedbacks.length} feedbacks`
+      message: `Laporan berhasil dibuat dengan ${feedbacks.length} feedback. Status feedback telah diperbarui.`,
+      feedbacksUpdated: feedbackIds ? feedbackIds.length : 0
     });
 
   } catch (error) {

@@ -121,6 +121,21 @@ export class FeedbackClusteringService {
       throw error;
     }
   }
+
+  async generateResponse(prompt) {
+    try {
+      const response = await ollama.generate({
+        model: this.model,
+        prompt: prompt,
+        stream: false
+      });
+
+      return response.response;
+    } catch (error) {
+      console.error('Error generating response with Ollama:', error);
+      throw error;
+    }
+  }
 }
 
 export const clusteringService = new FeedbackClusteringService();

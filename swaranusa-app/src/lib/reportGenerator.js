@@ -27,7 +27,7 @@ class GovernmentReportGenerator {
     const recommendations = await this.generateRecommendations(keyFindings, urgencyBreakdown);
     
     return {
-      title: `${category} Issues Report - ${location}`,
+      title: `Laporan ${category} - ${location}`,
       category,
       location,
       reportContent,
@@ -60,71 +60,106 @@ class GovernmentReportGenerator {
     return breakdown;
   }
 
+  // Improved JSON parsing with better error handling
+  safeParseJSON(response, fallback = []) {
+    try {
+      // Clean the response - remove any markdown formatting
+      let cleanResponse = response.trim();
+      
+      // Remove markdown code blocks if present
+      cleanResponse = cleanResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+      
+      // Try to find JSON content if it's embedded in text
+      const jsonMatch = cleanResponse.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanResponse = jsonMatch[0];
+      }
+      
+      return JSON.parse(cleanResponse);
+    } catch (error) {
+      console.warn('JSON parsing failed, using fallback:', error.message);
+      return fallback;
+    }
+  }
+
   async extractKeyFindings(feedbacks) {
     const prompt = `
-    Analyze the following citizen feedbacks and extract the top 5 key findings/issues. 
-    Focus on recurring themes, common problems, and significant concerns.
+    Analisis feedback warga berikut dan ekstrak 5 temuan kunci/masalah utama. 
+    Fokus pada tema berulang, masalah umum, dan kekhawatiran signifikan.
     
-    Feedbacks:
-    ${feedbacks.map((f, i) => `${i + 1}. ${f.title}: ${f.content}`).join('\n\n')}
+    Feedback:
+    ${feedbacks.slice(0, 10).map((f, i) => `${i + 1}. ${f.title}: ${f.content.substring(0, 200)}`).join('\n\n')}
     
-    Provide your response as a JSON array of strings, each representing a key finding.
-    Example: ["Infrastructure issues with roads", "Lack of public transportation", ...]
+    Berikan respons sebagai array JSON berisi string, masing-masing mewakili temuan kunci.
+    Format: ["Masalah infrastruktur jalan", "Kurangnya transportasi umum", ...]
+    
+    HANYA berikan array JSON, tidak ada teks tambahan.
     `;
 
     try {
       const response = await clusteringService.generateResponse(prompt);
-      return JSON.parse(response);
+      const parsed = this.safeParseJSON(response, []);
+      
+      // Validate that we got an array
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.slice(0, 5);
+      }
+      
+      throw new Error('Invalid response format');
     } catch (error) {
       console.error('Error extracting key findings:', error);
       // Fallback: extract from titles and categories
-      const commonIssues = this.extractCommonIssues(feedbacks);
-      return commonIssues.slice(0, 5);
+      return this.extractCommonIssues(feedbacks);
     }
   }
 
   async generateExecutiveSummary(feedbacks, category, location, sentimentBreakdown, urgencyBreakdown) {
     const prompt = `
-    Generate a professional executive summary for a government report about ${category} issues in ${location}.
+    Buat ringkasan eksekutif profesional untuk laporan pemerintah tentang masalah ${category} di ${location}.
     
     Data:
-    - Total feedbacks: ${feedbacks.length}
-    - Sentiment: ${sentimentBreakdown.positive} positive, ${sentimentBreakdown.negative} negative, ${sentimentBreakdown.neutral} neutral
-    - Urgency: ${urgencyBreakdown.high} high, ${urgencyBreakdown.medium} medium, ${urgencyBreakdown.low} low priority
+    - Total feedback: ${feedbacks.length}
+    - Sentimen: ${sentimentBreakdown.positive} positif, ${sentimentBreakdown.negative} negatif, ${sentimentBreakdown.neutral} netral
+    - Urgensi: ${urgencyBreakdown.high} tinggi, ${urgencyBreakdown.medium} sedang, ${urgencyBreakdown.low} rendah
     
-    Sample feedbacks:
-    ${feedbacks.slice(0, 3).map(f => `- ${f.title}: ${f.content.substring(0, 200)}...`).join('\n')}
+    Contoh feedback:
+    ${feedbacks.slice(0, 3).map(f => `- ${f.title}: ${f.content.substring(0, 150)}...`).join('\n')}
     
-    Write a concise, professional executive summary (2-3 paragraphs) suitable for government officials.
+    Tulis ringkasan eksekutif yang ringkas dan profesional (2-3 paragraf) yang cocok untuk pejabat pemerintah.
+    Gunakan bahasa Indonesia formal.
     `;
 
     try {
-      return await clusteringService.generateResponse(prompt);
+      const response = await clusteringService.generateResponse(prompt);
+      return response.trim();
     } catch (error) {
       console.error('Error generating executive summary:', error);
-      return `This report analyzes ${feedbacks.length} citizen feedbacks related to ${category} issues in ${location}. The feedback shows ${sentimentBreakdown.negative > sentimentBreakdown.positive ? 'significant concerns' : 'mixed reactions'} from citizens, with ${urgencyBreakdown.high} cases marked as high priority requiring immediate attention.`;
+      return `Laporan ini menganalisis ${feedbacks.length} feedback warga terkait masalah ${category} di ${location}. Feedback menunjukkan ${sentimentBreakdown.negative > sentimentBreakdown.positive ? 'kekhawatiran signifikan' : 'reaksi beragam'} dari warga, dengan ${urgencyBreakdown.high} kasus ditandai sebagai prioritas tinggi yang memerlukan perhatian segera.
+
+Analisis menunjukkan perlunya tindakan pemerintah untuk mengatasi masalah yang diidentifikasi dan meningkatkan kepuasan warga. Rekomendasi tindak lanjut disediakan berdasarkan temuan kunci dari feedback warga.`;
     }
   }
 
   async generateDetailedReport(feedbacks, category, location, keyFindings) {
     const prompt = `
-    Generate a detailed, formal government report about ${category} issues in ${location}.
+    Buat laporan pemerintah formal dan detail tentang masalah ${category} di ${location}.
     
-    Key Findings:
+    Temuan Kunci:
     ${keyFindings.map((finding, i) => `${i + 1}. ${finding}`).join('\n')}
     
-    Based on ${feedbacks.length} citizen feedbacks, create a comprehensive report with:
-    1. Introduction
-    2. Methodology
-    3. Detailed analysis of each key finding
-    4. Data overview
-    5. Conclusion
+    Berdasarkan ${feedbacks.length} feedback warga, buat laporan komprehensif dengan:
+    1. Pendahuluan
+    2. Metodologi
+    3. Analisis detail setiap temuan kunci
+    4. Gambaran data
+    5. Kesimpulan
     
-    Write in formal government report style, approximately 800-1000 words.
+    Tulis dalam gaya laporan pemerintah formal, sekitar 600-800 kata, dalam bahasa Indonesia.
     `;
 
     try {
-      return await clusteringService.generateResponse(prompt);
+      const response = await clusteringService.generateResponse(prompt);
+      return response.trim();
     } catch (error) {
       console.error('Error generating detailed report:', error);
       return this.generateFallbackReport(feedbacks, category, location, keyFindings);
@@ -133,27 +168,36 @@ class GovernmentReportGenerator {
 
   async generateRecommendations(keyFindings, urgencyBreakdown) {
     const prompt = `
-    Based on these key findings from citizen feedback, generate 5-7 actionable recommendations for government action:
+    Berdasarkan temuan kunci dari feedback warga ini, buat 5-7 rekomendasi yang dapat ditindaklanjuti untuk tindakan pemerintah:
     
-    Key Findings:
+    Temuan Kunci:
     ${keyFindings.map((finding, i) => `${i + 1}. ${finding}`).join('\n')}
     
-    Urgency breakdown: ${urgencyBreakdown.high} high priority, ${urgencyBreakdown.medium} medium, ${urgencyBreakdown.low} low priority issues.
+    Breakdown urgensi: ${urgencyBreakdown.high} prioritas tinggi, ${urgencyBreakdown.medium} sedang, ${urgencyBreakdown.low} prioritas rendah.
     
-    Provide recommendations as a JSON array of objects with this format:
+    Berikan rekomendasi sebagai array JSON dengan format ini:
     [
       {
-        "priority": "high|medium|low",
-        "recommendation": "Specific actionable recommendation",
-        "timeline": "Short-term|Medium-term|Long-term",
-        "department": "Relevant government department"
+        "priority": "high",
+        "recommendation": "Rekomendasi spesifik yang dapat ditindaklanjuti",
+        "timeline": "Jangka pendek",
+        "department": "Departemen pemerintah yang relevan"
       }
     ]
+    
+    HANYA berikan array JSON, tidak ada teks tambahan.
     `;
 
     try {
       const response = await clusteringService.generateResponse(prompt);
-      return JSON.parse(response);
+      const parsed = this.safeParseJSON(response, []);
+      
+      // Validate that we got an array of objects with required fields
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].recommendation) {
+        return parsed.slice(0, 7);
+      }
+      
+      throw new Error('Invalid recommendations format');
     } catch (error) {
       console.error('Error generating recommendations:', error);
       return this.generateFallbackRecommendations(keyFindings, urgencyBreakdown);
@@ -162,11 +206,20 @@ class GovernmentReportGenerator {
 
   extractCommonIssues(feedbacks) {
     const issues = {};
+    const commonWords = ['masalah', 'problem', 'issue', 'keluhan', 'complaint'];
+    
     feedbacks.forEach(feedback => {
-      const words = feedback.title.toLowerCase().split(' ');
-      words.forEach(word => {
-        if (word.length > 3) {
-          issues[word] = (issues[word] || 0) + 1;
+      const title = feedback.title.toLowerCase();
+      const content = feedback.content.toLowerCase();
+      const text = `${title} ${content}`;
+      
+      // Extract meaningful phrases
+      const words = text.split(/\s+/);
+      words.forEach((word, index) => {
+        if (word.length > 4 && !commonWords.includes(word)) {
+          // Try to capture 2-word phrases for better context
+          const phrase = index < words.length - 1 ? `${word} ${words[index + 1]}` : word;
+          issues[phrase] = (issues[phrase] || 0) + 1;
         }
       });
     });
@@ -174,24 +227,30 @@ class GovernmentReportGenerator {
     return Object.entries(issues)
       .sort(([,a], [,b]) => b - a)
       .slice(0, 5)
-      .map(([word]) => `Issues related to ${word}`);
+      .map(([phrase]) => `Masalah terkait ${phrase}`);
   }
 
   generateFallbackReport(feedbacks, category, location, keyFindings) {
     return `
-# ${category} Issues Report - ${location}
+LAPORAN ${category.toUpperCase()} - ${location.toUpperCase()}
 
-## Introduction
-This report analyzes ${feedbacks.length} citizen feedbacks submitted regarding ${category} issues in ${location}. The analysis was conducted using AI-powered clustering and sentiment analysis to identify key themes and concerns.
+PENDAHULUAN
+Laporan ini menganalisis ${feedbacks.length} feedback warga yang disampaikan mengenai masalah ${category} di ${location}. Analisis dilakukan menggunakan sistem clustering dan analisis sentimen berbasis AI untuk mengidentifikasi tema dan kekhawatiran utama.
 
-## Key Findings
+TEMUAN KUNCI
 ${keyFindings.map((finding, i) => `${i + 1}. ${finding}`).join('\n')}
 
-## Data Overview
-The feedback collection period shows consistent citizen engagement with ${category} issues. Citizens have expressed various levels of concern, with detailed descriptions of their experiences and suggested improvements.
+GAMBARAN DATA
+Periode pengumpulan feedback menunjukkan keterlibatan warga yang konsisten terhadap masalah ${category}. Warga telah menyampaikan berbagai tingkat kekhawatiran, dengan deskripsi rinci tentang pengalaman mereka dan saran perbaikan.
 
-## Conclusion
-The citizen feedback reveals important insights into ${category} issues in ${location}. Government attention and action are recommended to address the identified concerns and improve citizen satisfaction.
+METODOLOGI
+Data feedback dikumpulkan melalui platform digital dan dianalisis menggunakan teknologi AI untuk mengidentifikasi pola, sentimen, dan tingkat urgensi. Setiap feedback diverifikasi menggunakan teknologi blockchain untuk memastikan integritas data.
+
+KESIMPULAN
+Feedback warga mengungkapkan wawasan penting tentang masalah ${category} di ${location}. Perhatian dan tindakan pemerintah direkomendasikan untuk mengatasi kekhawatiran yang teridentifikasi dan meningkatkan kepuasan warga.
+
+REKOMENDASI TINDAK LANJUT
+Berdasarkan analisis feedback, diperlukan koordinasi antar departemen terkait untuk menangani masalah yang telah diidentifikasi secara komprehensif dan berkelanjutan.
     `;
   }
 
@@ -199,21 +258,27 @@ The citizen feedback reveals important insights into ${category} issues in ${loc
     return [
       {
         priority: urgencyBreakdown.high > 0 ? "high" : "medium",
-        recommendation: "Conduct detailed investigation of reported issues",
-        timeline: "Short-term",
-        department: "Relevant Service Department"
+        recommendation: "Melakukan investigasi mendalam terhadap masalah yang dilaporkan warga",
+        timeline: "Jangka pendek",
+        department: "Departemen Layanan Terkait"
       },
       {
         priority: "medium",
-        recommendation: "Implement citizen feedback monitoring system",
-        timeline: "Medium-term",
-        department: "Administration"
+        recommendation: "Mengimplementasikan sistem monitoring feedback warga secara berkelanjutan",
+        timeline: "Jangka menengah",
+        department: "Bagian Administrasi"
+      },
+      {
+        priority: "medium",
+        recommendation: "Meningkatkan koordinasi antar departemen untuk penanganan masalah terintegrasi",
+        timeline: "Jangka menengah",
+        department: "Sekretariat Daerah"
       },
       {
         priority: "low",
-        recommendation: "Regular community engagement sessions",
-        timeline: "Long-term",
-        department: "Community Relations"
+        recommendation: "Mengadakan sesi keterlibatan masyarakat secara rutin",
+        timeline: "Jangka panjang",
+        department: "Hubungan Masyarakat"
       }
     ];
   }
