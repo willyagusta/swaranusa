@@ -4,6 +4,38 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('id-ID', {
+    year: 'numeric',
+    month: 'long', 
+    day: 'numeric',
+    timeZone: 'Asia/Jakarta'
+  });
+};
+
+const formatDateTime = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleString('id-ID', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Jakarta'
+  });
+};
+
+// Create a safe JSON parser helper function
+const safeJSONParse = (jsonString, fallback = null) => {
+  try {
+    return JSON.parse(jsonString || (Array.isArray(fallback) ? '[]' : '{}'));
+  } catch (error) {
+    console.warn('JSON parse error:', error, 'Input:', jsonString);
+    return fallback;
+  }
+};
+
 export default function GovernmentDashboard() {
   const { user, loading } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
@@ -120,7 +152,7 @@ export default function GovernmentDashboard() {
 
       addText(`Category: ${report.category}`, 12, true);
       addText(`Location: ${report.location}`, 12, true);
-      addText(`Generated: ${new Date(report.created_at).toLocaleDateString()}`, 12);
+      addText(`Generated: ${formatDate(report.created_at)}`, 12);
       addText(`Total Feedbacks: ${report.total_feedbacks}`, 12);
       yPosition += 10;
 
@@ -129,27 +161,33 @@ export default function GovernmentDashboard() {
       yPosition += 10;
 
       addText('KEY FINDINGS', 14, true);
-      const keyFindings = JSON.parse(report.key_findings || '[]');
+      // Safe JSON parsing with fallback
+      const keyFindings = safeJSONParse(report.key_findings, []);
       keyFindings.forEach((finding, index) => {
         addText(`${index + 1}. ${finding}`, 11);
       });
       yPosition += 10;
 
       addText('RECOMMENDATIONS', 14, true);
-      const recommendations = JSON.parse(report.recommendations || '[]');
+      // Safe JSON parsing with fallback
+      const recommendations = safeJSONParse(report.recommendations, []);
       recommendations.forEach((rec, index) => {
-        addText(`${index + 1}. ${rec.recommendation}`, 11, true);
-        addText(`   Priority: ${rec.priority} | Timeline: ${rec.timeline} | Department: ${rec.department}`, 10);
+        addText(`${index + 1}. ${rec.recommendation || rec}`, 11, true);
+        if (rec.priority && rec.timeline && rec.department) {
+          addText(`   Priority: ${rec.priority} | Timeline: ${rec.timeline} | Department: ${rec.department}`, 10);
+        }
         yPosition += 5;
       });
 
       yPosition += 10;
       addText('DATA ANALYSIS', 14, true);
       
-      const sentiment = JSON.parse(report.sentiment_breakdown || '{}');
+      // Safe JSON parsing with fallback
+      const sentiment = safeJSONParse(report.sentiment_breakdown, {});
       addText(`Sentiment Analysis: ${sentiment.positive || 0} Positive, ${sentiment.negative || 0} Negative, ${sentiment.neutral || 0} Neutral`, 11);
       
-      const urgency = JSON.parse(report.urgency_breakdown || '{}');
+      // Safe JSON parsing with fallback
+      const urgency = safeJSONParse(report.urgency_breakdown, {});
       addText(`Urgency Levels: ${urgency.high || 0} High, ${urgency.medium || 0} Medium, ${urgency.low || 0} Low`, 11);
 
       if (yPosition + 50 > pageHeight - margin) {
@@ -169,7 +207,14 @@ export default function GovernmentDashboard() {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+    return (
+      <div 
+        className="flex justify-center items-center min-h-screen"
+        suppressHydrationWarning={true}
+      >
+        Loading...
+      </div>
+    );
   }
 
   if (!user) {
@@ -198,7 +243,10 @@ export default function GovernmentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div 
+      className="min-h-screen bg-gray-50"
+      suppressHydrationWarning={true}
+    >
       {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -300,7 +348,7 @@ export default function GovernmentDashboard() {
                         {feedback.category} - {feedback.location}
                       </p>
                       <p className="text-xs text-gray-500">
-                        By {feedback.first_name} {feedback.last_name} - {new Date(feedback.created_at).toLocaleDateString()}
+                        By {feedback.first_name} {feedback.last_name} - {formatDate(feedback.created_at)}
                       </p>
                     </div>
                   ))}
@@ -330,7 +378,7 @@ export default function GovernmentDashboard() {
                           {report.total_feedbacks} feedbacks analyzed
                         </p>
                         <p className="text-xs text-gray-500">
-                          Generated on {new Date(report.created_at).toLocaleDateString()}
+                          Generated on {formatDate(report.created_at)}
                         </p>
                       </div>
                       <div className="flex space-x-2 ml-4">
@@ -409,7 +457,7 @@ export default function GovernmentDashboard() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <span className="font-semibold text-gray-700">Generated:</span>
-                      <p className="text-gray-600">{new Date(selectedReport.created_at).toLocaleDateString()}</p>
+                      <p className="text-gray-600">{formatDate(selectedReport.created_at)}</p>
                     </div>
                     <div>
                       <span className="font-semibold text-gray-700">Status:</span>
@@ -438,7 +486,7 @@ export default function GovernmentDashboard() {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3 border-b pb-2">Key Findings</h3>
                   <div className="space-y-2">
-                    {JSON.parse(selectedReport.key_findings || '[]').map((finding, index) => (
+                    {safeJSONParse(selectedReport.key_findings, []).map((finding, index) => (
                       <div key={index} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
                         <span className="flex-shrink-0 w-6 h-6 bg-yellow-500 text-white text-sm font-bold rounded-full flex items-center justify-center">
                           {index + 1}
@@ -456,7 +504,7 @@ export default function GovernmentDashboard() {
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-gray-800 mb-3">Sentiment Analysis</h4>
                       {(() => {
-                        const sentiment = JSON.parse(selectedReport.sentiment_breakdown || '{}');
+                        const sentiment = safeJSONParse(selectedReport.sentiment_breakdown, {});
                         return (
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
@@ -479,7 +527,7 @@ export default function GovernmentDashboard() {
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-gray-800 mb-3">Urgency Levels</h4>
                       {(() => {
-                        const urgency = JSON.parse(selectedReport.urgency_breakdown || '{}');
+                        const urgency = safeJSONParse(selectedReport.urgency_breakdown, {});
                         return (
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
@@ -505,29 +553,31 @@ export default function GovernmentDashboard() {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3 border-b pb-2">Recommendations</h3>
                   <div className="space-y-4">
-                    {JSON.parse(selectedReport.recommendations || '[]').map((rec, index) => (
+                    {safeJSONParse(selectedReport.recommendations, []).map((rec, index) => (
                       <div key={index} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
                         <div className="flex items-start space-x-3">
                           <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white text-sm font-bold rounded-full flex items-center justify-center">
                             {index + 1}
                           </span>
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900 mb-2">{rec.recommendation}</p>
-                            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                              <span className={`px-2 py-1 rounded ${
-                                rec.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-green-100 text-green-700'
-                              }`}>
-                                Priority: {rec.priority}
-                              </span>
-                              <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                                Timeline: {rec.timeline}
-                              </span>
-                              <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                                Department: {rec.department}
-                              </span>
-                            </div>
+                            <p className="font-medium text-gray-900 mb-2">{rec.recommendation || rec}</p>
+                            {rec.priority && rec.timeline && rec.department && (
+                              <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                                <span className={`px-2 py-1 rounded ${
+                                  rec.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                  rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-green-100 text-green-700'
+                                }`}>
+                                  Priority: {rec.priority}
+                                </span>
+                                <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                                  Timeline: {rec.timeline}
+                                </span>
+                                <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                                  Department: {rec.department}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -551,7 +601,7 @@ export default function GovernmentDashboard() {
             <div className="p-6 border-t bg-gray-50">
               <div className="flex justify-between items-center">
                 <p className="text-sm text-gray-500">
-                  Report ID: {selectedReport.id} • Generated on {new Date(selectedReport.created_at).toLocaleString()}
+                  Report ID: {selectedReport.id} • Generated on {formatDateTime(selectedReport.created_at)}
                 </p>
                 <button
                   onClick={() => downloadReportAsPDF(selectedReport)}

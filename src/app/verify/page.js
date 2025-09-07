@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 export default function VerifyPage() {
@@ -34,7 +34,7 @@ export default function VerifyPage() {
   };
 
   // Auto-verify if hash is in URL
-  React.useEffect(() => {
+  useEffect(() => {
     if (hashFromUrl) {
       setInputHash(hashFromUrl);
       handleVerify(hashFromUrl);
