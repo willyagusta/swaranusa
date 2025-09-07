@@ -27,7 +27,7 @@ export default function FeedbackStatusHistory({ feedbackId }) {
 
   useEffect(() => {
     fetchStatusHistory();
-  }, [feedbackId]);
+  }, [feedbackId, fetchStatusHistory]);
 
   const fetchStatusHistory = async () => {
     try {
@@ -119,7 +119,7 @@ export default function FeedbackStatusHistory({ feedbackId }) {
               </p>
               {history.note && (
                 <p className="mt-1 italic">
-                  Catatan: "{history.note}"
+                  Catatan: {history.note}
                 </p>
               )}
             </div>

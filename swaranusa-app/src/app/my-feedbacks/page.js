@@ -191,7 +191,7 @@ function MyFeedbacksContent() {
                     </p>
                     {feedback.status_note && (
                       <p className="text-sm text-gray-600 italic mt-1">
-                        Catatan: "{feedback.status_note}"
+                        Catatan: {feedback.status_note}
                       </p>
                     )}
                   </div>

@@ -222,7 +222,7 @@ function DashboardContent() {
                       </p>
                       {feedback.status_note && (
                         <p className="text-xs text-gray-600 italic mt-1">
-                          Catatan: "{feedback.status_note}"
+                          Catatan: {feedback.status_note}
                         </p>
                       )}
                     </div>
