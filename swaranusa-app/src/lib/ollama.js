@@ -9,130 +9,198 @@ export class FeedbackClusteringService {
     this.model = 'llama3.2';
   }
 
-  async processFeedback(feedbackText) {
+  async processFeedback(feedbackText, locationData = {}) {
     try {
+      const { provinsi, kota, kabupaten, location } = locationData;
+      
       const prompt = `
-        Analyze this citizen feedback/complaint and extract the following information in JSON format:
+        Analyze this Indonesian citizen feedback/complaint and extract the following information in JSON format:
         
         Feedback: "${feedbackText}"
+        Location: ${provinsi}, ${kota}, ${kabupaten}${location ? `, ${location}` : ''}
         
         Please provide:
         {
-          "cleanedContent": "Professional version without profanity or excessive emotion",
-          "category": "One of: infrastructure, public_services, environment, safety, transport, governance, other",
+          "cleanedContent": "Professional version without profanity or excessive emotion, in Indonesian",
+          "category": "One of: infrastruktur, kesehatan, pendidikan, lingkungan, transportasi, keamanan, ekonomi, sosial, pemerintahan, teknologi",
           "urgency": "One of: low, medium, high",
           "sentiment": "One of: positive, negative, neutral",
-          "tags": ["array", "of", "relevant", "keywords"],
-          "location": "extracted location if mentioned, or null",
-          "summary": "Brief 1-sentence summary of the main issue"
+          "tags": ["array", "of", "relevant", "keywords", "in", "Indonesian"],
+          "locationRelevance": "How relevant is the location to this issue (high/medium/low)",
+          "suggestedDepartment": "Which government department should handle this"
         }
-        
-        Only respond with valid JSON, no additional text.
+
+        Consider the location context when determining category and urgency.
+        Respond only with valid JSON.
       `;
 
-      const response = await ollama.generate({
+      const response = await ollama.chat({
         model: this.model,
-        prompt: prompt,
+        messages: [{ role: 'user', content: prompt }],
         stream: false,
-        format: 'json'
       });
 
-      return JSON.parse(response.response);
+      let result;
+      try {
+        result = JSON.parse(response.message.content);
+      } catch (parseError) {
+        console.warn('Failed to parse AI response as JSON:', response.message.content);
+        result = {
+          cleanedContent: feedbackText,
+          category: 'pemerintahan',
+          urgency: 'medium',
+          sentiment: 'neutral',
+          tags: ['masukan', 'warga'],
+          locationRelevance: 'medium',
+          suggestedDepartment: 'Pemerintah Daerah'
+        };
+      }
+
+      return {
+        ...result,
+        originalLocation: { provinsi, kota, kabupaten, location }
+      };
+
     } catch (error) {
       console.error('Error processing feedback with Ollama:', error);
-      throw error;
+      return {
+        cleanedContent: feedbackText,
+        category: 'pemerintahan',
+        urgency: 'medium',
+        sentiment: 'neutral',
+        tags: ['masukan', 'warga'],
+        locationRelevance: 'medium',
+        suggestedDepartment: 'Pemerintah Daerah',
+        originalLocation: locationData
+      };
     }
   }
 
   async findSimilarFeedbacks(newFeedback, existingFeedbacks) {
+    if (!existingFeedbacks || existingFeedbacks.length === 0) {
+      return {
+        suggestedClusterId: null,
+        shouldCreateNewCluster: true,
+        similarityScore: 0,
+        reason: 'No existing feedbacks to compare'
+      };
+    }
+
     try {
       const prompt = `
-        Compare this new feedback with existing feedbacks and determine similarity:
+        Analyze if this new feedback should be clustered with existing ones:
         
-        New Feedback: "${newFeedback.content}"
+        NEW FEEDBACK:
+        Content: "${newFeedback.content}"
         Category: ${newFeedback.category}
+        Location: ${newFeedback.originalLocation?.provinsi}, ${newFeedback.originalLocation?.kota}, ${newFeedback.originalLocation?.kabupaten}
         Tags: ${JSON.stringify(newFeedback.tags)}
         
-        Existing Feedbacks:
-        ${existingFeedbacks.map((f, i) => `
-        ${i + 1}. Content: "${f.content}"
-           Category: ${f.category}
-           Tags: ${JSON.stringify(f.tags)}
-           Cluster ID: ${f.clusterId}
-        `).join('\n')}
+        EXISTING FEEDBACKS:
+        ${existingFeedbacks.map((fb, idx) => `
+        ${idx + 1}. ID: ${fb.id}, Content: "${fb.content.substring(0, 200)}...", Category: ${fb.category}, Cluster: ${fb.clusterId}
+        `).join('')}
         
-        Determine which existing feedback is most similar (if any) and suggest cluster assignment.
-        Response format:
+        Respond with JSON:
         {
-          "mostSimilarId": number or null,
-          "similarityScore": 0-100,
           "suggestedClusterId": number or null,
           "shouldCreateNewCluster": boolean,
-          "reasoning": "brief explanation"
+          "similarityScore": number (0-100),
+          "reason": "explanation in Indonesian"
         }
         
-        Only respond with valid JSON.
+        Consider location proximity, category match, and content similarity.
+        Feedbacks from same province/city with similar issues should cluster together.
       `;
 
-      const response = await ollama.generate({
+      const response = await ollama.chat({
         model: this.model,
-        prompt: prompt,
+        messages: [{ role: 'user', content: prompt }],
         stream: false,
-        format: 'json'
       });
 
-      return JSON.parse(response.response);
+      try {
+        return JSON.parse(response.message.content);
+      } catch (parseError) {
+        console.warn('Failed to parse clustering response:', response.message.content);
+        return {
+          suggestedClusterId: null,
+          shouldCreateNewCluster: true,
+          similarityScore: 0,
+          reason: 'Gagal menganalisis kemiripan'
+        };
+      }
+
     } catch (error) {
       console.error('Error finding similar feedbacks:', error);
-      throw error;
+      return {
+        suggestedClusterId: null,
+        shouldCreateNewCluster: true,
+        similarityScore: 0,
+        reason: 'Error dalam analisis clustering'
+      };
     }
   }
 
   async generateClusterName(feedbacks) {
     try {
       const prompt = `
-        Based on these similar feedbacks, generate a cluster name and description:
+        Generate a cluster name and description for these related feedbacks in Indonesian:
         
-        Feedbacks:
-        ${feedbacks.map((f, i) => `
-        ${i + 1}. "${f.content}" (Category: ${f.category})
-        `).join('\n')}
+        ${feedbacks.map((fb, idx) => `
+        ${idx + 1}. Category: ${fb.category}, Content: "${fb.content.substring(0, 150)}..."
+        Location: ${fb.originalLocation ? `${fb.originalLocation.provinsi}, ${fb.originalLocation.kota}` : 'Unknown'}
+        `).join('')}
         
-        Generate:
+        Respond with JSON:
         {
-          "name": "Concise cluster name (2-4 words)",
-          "description": "Brief description of common theme",
-          "keywords": ["array", "of", "key", "terms"]
+          "name": "Short descriptive name in Indonesian (max 50 chars)",
+          "description": "Brief description of the common issue (max 200 chars)",
+          "keywords": ["array", "of", "key", "terms", "in", "Indonesian"]
         }
         
-        Only respond with valid JSON.
+        Focus on the common theme and location if relevant.
       `;
 
-      const response = await ollama.generate({
+      const response = await ollama.chat({
         model: this.model,
-        prompt: prompt,
+        messages: [{ role: 'user', content: prompt }],
         stream: false,
-        format: 'json'
       });
 
-      return JSON.parse(response.response);
+      try {
+        return JSON.parse(response.message.content);
+      } catch (parseError) {
+        console.warn('Failed to parse cluster name response:', response.message.content);
+        return {
+          name: `Cluster ${feedbacks[0]?.category || 'Umum'}`,
+          description: 'Kumpulan masukan dengan tema serupa',
+          keywords: ['masukan', 'warga', feedbacks[0]?.category || 'umum']
+        };
+      }
+
     } catch (error) {
       console.error('Error generating cluster name:', error);
-      throw error;
+      return {
+        name: `Cluster ${feedbacks[0]?.category || 'Umum'}`,
+        description: 'Kumpulan masukan dengan tema serupa',
+        keywords: ['masukan', 'warga', feedbacks[0]?.category || 'umum']
+      };
     }
   }
 
+  // New method for generating responses (used by report generator)
   async generateResponse(prompt) {
     try {
-      const response = await ollama.generate({
+      const response = await ollama.chat({
         model: this.model,
-        prompt: prompt,
-        stream: false
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
       });
 
-      return response.response;
+      return response.message.content;
     } catch (error) {
-      console.error('Error generating response with Ollama:', error);
+      console.error('Error generating response:', error);
       throw error;
     }
   }

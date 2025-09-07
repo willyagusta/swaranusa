@@ -8,6 +8,9 @@ const sql = neon(process.env.DATABASE_URL);
 
 export async function POST(request) {
   try {
+    // Set timezone to WIB
+    await sql`SET timezone = 'Asia/Jakarta'`;
+    
     // Verify authentication
     const token = request.cookies.get('auth-token')?.value;
     if (!token) {
@@ -20,16 +23,25 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { title, content } = body;
+    const { title, content, provinsi, kota, kabupaten, location } = body;
 
-    // Process feedback with Ollama
-    const processed = await clusteringService.processFeedback(content);
+    // Validate required fields
+    if (!title?.trim() || !content?.trim() || !provinsi || !kota || !kabupaten) {
+      return NextResponse.json({ 
+        error: 'Title, content, provinsi, kota, and kabupaten are required' 
+      }, { status: 400 });
+    }
 
-    // Get existing feedbacks for clustering
+    // Process feedback with Ollama including location data
+    const locationData = { provinsi, kota, kabupaten, location };
+    const processed = await clusteringService.processFeedback(content, locationData);
+
+    // Get existing feedbacks for clustering (same province and category)
     const existingFeedbacks = await sql`
-      SELECT id, content, category, tags, cluster_id as "clusterId"
+      SELECT id, content, category, tags, cluster_id as "clusterId", provinsi, kota, kabupaten
       FROM feedbacks 
       WHERE category = ${processed.category}
+        AND provinsi = ${provinsi}
       ORDER BY created_at DESC 
       LIMIT 20
     `;
@@ -39,7 +51,12 @@ export async function POST(request) {
     if (existingFeedbacks.length > 0) {
       // Find similar feedbacks
       const similarity = await clusteringService.findSimilarFeedbacks(
-        { content: processed.cleanedContent, category: processed.category, tags: processed.tags },
+        { 
+          content: processed.cleanedContent, 
+          category: processed.category, 
+          tags: processed.tags,
+          originalLocation: locationData
+        },
         existingFeedbacks
       );
 
@@ -48,7 +65,11 @@ export async function POST(request) {
       } else if (similarity.shouldCreateNewCluster) {
         // Create new cluster
         const clusterInfo = await clusteringService.generateClusterName([
-          { content: processed.cleanedContent, category: processed.category }
+          { 
+            content: processed.cleanedContent, 
+            category: processed.category,
+            originalLocation: locationData
+          }
         ]);
 
         const [newCluster] = await sql`
@@ -65,9 +86,13 @@ export async function POST(request) {
         clusterId = newCluster.id;
       }
     } else {
-      // First feedback in this category - create new cluster
+      // First feedback in this category and province - create new cluster
       const clusterInfo = await clusteringService.generateClusterName([
-        { content: processed.cleanedContent, category: processed.category }
+        { 
+          content: processed.cleanedContent, 
+          category: processed.category,
+          originalLocation: locationData
+        }
       ]);
 
       const [newCluster] = await sql`
@@ -84,11 +109,13 @@ export async function POST(request) {
       clusterId = newCluster.id;
     }
 
-    // Insert feedback
+    // Insert feedback with explicit status set to 'belum_dilihat'
     const [newFeedback] = await sql`
       INSERT INTO feedbacks (
         user_id, title, content, original_content, processed_content,
-        category, cluster_id, urgency, location, tags, sentiment
+        category, cluster_id, urgency, 
+        provinsi, kota, kabupaten, location,
+        tags, sentiment, status
       )
       VALUES (
         ${decoded.userId},
@@ -99,11 +126,15 @@ export async function POST(request) {
         ${processed.category},
         ${clusterId},
         ${processed.urgency},
-        ${processed.location},
+        ${provinsi},
+        ${kota},
+        ${kabupaten},
+        ${location || null},
         ${JSON.stringify(processed.tags)},
-        ${processed.sentiment}
+        ${processed.sentiment},
+        'belum_dilihat'
       )
-      RETURNING id, title, content, category, urgency, sentiment, created_at
+      RETURNING id, title, content, category, urgency, sentiment, provinsi, kota, kabupaten, location, status, created_at
     `;
 
     // Update cluster feedback count
@@ -125,6 +156,7 @@ export async function POST(request) {
         userId: decoded.userId,
         title: newFeedback.title,
         content: newFeedback.content,
+        location: `${provinsi}, ${kota}, ${kabupaten}${location ? `, ${location}` : ''}`,
         createdAt: newFeedback.created_at
       };
 

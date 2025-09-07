@@ -35,10 +35,13 @@ export const feedbacks = pgTable('feedbacks', {
   category: text('category'), // Auto-assigned category
   clusterId: integer('cluster_id').references(() => clusters.id),
   urgency: text('urgency'), // low, medium, high
-  location: text('location'),
+  provinsi: text('provinsi').notNull(),
+  kota: text('kota').notNull(),
+  kabupaten: text('kabupaten').notNull(),
+  location: text('location'), // Detailed address/specific location (optional)
   tags: jsonb('tags'), // Array of extracted tags
   sentiment: text('sentiment'), // positive, negative, neutral
-  // NEW: Status tracking fields
+  // Status tracking fields
   status: text('status').default('belum_dilihat'), // belum_dilihat, dilihat, masuk_daftar_bahasan, dirapatkan, ditindak_lanjuti, selesai
   statusUpdatedBy: integer('status_updated_by').references(() => users.id), // Government user who updated status
   statusUpdatedAt: timestamp('status_updated_at'),
@@ -51,7 +54,7 @@ export const feedbacks = pgTable('feedbacks', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-// NEW: Feedback status history table
+// Feedback status history table
 export const feedbackStatusHistory = pgTable('feedback_status_history', {
   id: serial('id').primaryKey(),
   feedbackId: integer('feedback_id').notNull().references(() => feedbacks.id),
@@ -69,27 +72,25 @@ export const blockchainVerifications = pgTable('blockchain_verifications', {
   blockNumber: integer('block_number'),
   blockTimestamp: timestamp('block_timestamp'),
   gasUsed: text('gas_used'),
-  networkName: text('network_name').default('ethereum'),
+  networkName: text('network_name'),
   verificationStatus: text('verification_status').default('pending'), // pending, confirmed, failed
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 export const governmentReports = pgTable('government_reports', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
   category: text('category').notNull(),
-  location: text('location').notNull(),
-  reportContent: text('report_content').notNull(), // AI-generated formal report
-  executiveSummary: text('executive_summary').notNull(),
+  provinsi: text('provinsi').notNull(),
+  kota: text('kota').notNull(),
+  kabupaten: text('kabupaten').notNull(),
+  location: text('location'), // Optional specific location
+  totalFeedbacks: integer('total_feedbacks').notNull(),
+  feedbackIds: jsonb('feedback_ids'), // Array of feedback IDs included in report
+  executiveSummary: text('executive_summary'),
   keyFindings: jsonb('key_findings'), // Array of key findings
   recommendations: jsonb('recommendations'), // Array of recommendations
-  feedbackIds: jsonb('feedback_ids'), // Array of feedback IDs included in this report
-  totalFeedbacks: integer('total_feedbacks').notNull(),
-  sentimentBreakdown: jsonb('sentiment_breakdown'), // {positive: X, negative: Y, neutral: Z}
-  urgencyBreakdown: jsonb('urgency_breakdown'), // {low: X, medium: Y, high: Z}
-  generatedBy: integer('generated_by').references(() => users.id), // Who generated the report
-  status: text('status').default('draft'), // draft, published, archived
+  reportContent: text('report_content'), // Full report text
+  createdBy: integer('created_by').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
 });

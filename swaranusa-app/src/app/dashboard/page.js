@@ -94,7 +94,7 @@ function DashboardContent() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <Link href="/submit-feedback" className="group">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl p-8 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
               <div className="w-16 h-16 bg-emerald/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald/20 transition-colors">
@@ -105,6 +105,21 @@ function DashboardContent() {
               <h3 className="text-2xl font-bold text-onyx mb-4">Kirim Masukan</h3>
               <p className="text-gray-600">
                 Bagikan kekhawatiran dan saran Anda. AI kami akan membantu mengubahnya menjadi laporan profesional.
+              </p>
+            </div>
+          </Link>
+
+          {/* My Feedbacks */}
+          <Link href="/my-feedbacks" className="group">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl p-8 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+              <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-500/20 transition-colors">
+                <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-onyx mb-4">Masukan Saya</h3>
+              <p className="text-gray-600">
+                Lihat semua masukan yang telah Anda kirim dan pantau status penanganannya.
               </p>
             </div>
           </Link>
@@ -140,7 +155,21 @@ function DashboardContent() {
 
         {/* Recent Activity */}
         <div className="bg-white/95 backdrop-blur-md rounded-2xl p-8 border border-gray-100 shadow-lg">
-          <h3 className="text-2xl font-bold text-onyx mb-6">Aktivitas Terkini</h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-bold text-onyx">Aktivitas Terkini</h3>
+            {/* Additional CTA Button in the header */}
+            {recentFeedbacks.length > 0 && (
+              <Link 
+                href="/my-feedbacks"
+                className="bg-emerald hover:bg-sage text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                <span>Lihat Semua</span>
+              </Link>
+            )}
+          </div>
           
           {loadingFeedbacks ? (
             <div className="text-center py-12">
@@ -166,8 +195,18 @@ function DashboardContent() {
               <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
-              <p className="text-gray-500 text-lg">Belum ada aktivitas</p>
-              <p className="text-gray-400">Mulai dengan mengirim masukan pertama Anda!</p>
+              <p className="text-gray-500 text-lg mb-2">Belum ada aktivitas</p>
+              <p className="text-gray-400 mb-4">Mulai dengan mengirim masukan pertama Anda!</p>
+              {/* CTA for empty state */}
+              <Link 
+                href="/submit-feedback"
+                className="bg-emerald hover:bg-sage text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Kirim Masukan Pertama</span>
+              </Link>
             </div>
           ) : (
             <div className="space-y-4">
@@ -230,16 +269,18 @@ function DashboardContent() {
                 </div>
               ))}
               
-              {recentFeedbacks.length >= 5 && (
-                <div className="text-center pt-4">
-                  <Link 
-                    href="/my-feedbacks" 
-                    className="text-emerald hover:text-sage font-medium transition-colors"
-                  >
-                    Lihat Semua Masukan →
-                  </Link>
-                </div>
-              )}
+              {/* Bottom CTA */}
+              <div className="text-center pt-6 border-t border-gray-100">
+                <Link 
+                  href="/my-feedbacks" 
+                  className="bg-emerald hover:bg-sage text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                  <span>Lihat Semua Masukan Saya</span>
+                </Link>
+              </div>
             </div>
           )}
         </div>

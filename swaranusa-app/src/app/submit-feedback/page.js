@@ -1,25 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { getProvinces, getAllCitiesAndRegencies } from '@/data/indonesia-locations';
 
-export default function SubmitComplaint() {
+export default function SubmitFeedback() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [formData, setFormData] = useState({
     title: '',
-    content: ''
+    content: '',
+    provinsi: '',
+    kota: '',
+    kabupaten: '',
+    location: '' // Optional specific location
   });
-  const [loading, setLoading] = useState(false);
+  const [availableLocations, setAvailableLocations] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(null);
-  const { user } = useAuth();
-  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      router.push('/signin');
+      return;
+    }
+  }, [user, loading, router]);
+
+  // Update available cities/regencies when province changes
+  useEffect(() => {
+    if (formData.provinsi) {
+      const locations = getAllCitiesAndRegencies(formData.provinsi);
+      setAvailableLocations(locations);
+      // Reset kota and kabupaten when province changes
+      setFormData(prev => ({
+        ...prev,
+        kota: '',
+        kabupaten: ''
+      }));
+    } else {
+      setAvailableLocations([]);
+    }
+  }, [formData.provinsi]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    
+    if (!formData.title.trim() || !formData.content.trim() || 
+        !formData.provinsi || !formData.kota || !formData.kabupaten) {
+      setError('Harap isi semua field yang wajib diisi');
+      return;
+    }
+
+    setSubmitting(true);
     setError('');
-    setSuccess(null);
 
     try {
       const response = await fetch('/api/feedback/submit', {
@@ -32,169 +67,232 @@ export default function SubmitComplaint() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        setSuccess(data);
-        // Reset form
-        setFormData({ title: '', content: '' });
-        
-        // Redirect after showing success message
-        setTimeout(() => {
-          router.push('/dashboard?success=feedback-submitted');
-        }, 5000);
+      if (data.success) {
+        router.push('/dashboard?submitted=true');
       } else {
-        setError(data.error || 'Failed to submit feedback');
+        setError(data.error || 'Gagal mengirim masukan');
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      console.error('Error submitting feedback:', error);
+      setError('Terjadi kesalahan saat mengirim masukan');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
-    return <div>Please sign in to submit feedback.</div>;
+    return null;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald/5 via-white to-sage/10">
+      {/* Navigation */}
       <nav className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold text-onyx">Submit Complaint</h1>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="text-gray-600 hover:text-emerald transition-colors"
-            >
-              Back to Dashboard
-            </button>
+            <div className="flex items-center">
+              <button 
+                onClick={() => router.push('/dashboard')}
+                className="text-2xl font-bold text-onyx hover:text-emerald transition-colors"
+              >
+                Swaranusa
+              </button>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-600">
+                {user.firstName} {user.lastName}
+              </span>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Kembali
+              </button>
+            </div>
           </div>
         </div>
       </nav>
 
+      {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-8 border border-gray-100 shadow-lg">
-          <h2 className="text-3xl font-bold text-onyx mb-6">
-            Submit Your Citizen Complaint
-          </h2>
-          <p className="text-gray-600 mb-8">
-            Share your concerns and we will transform them into a professional document. 
-            Our AI will automatically categorize and cluster your feedback with similar issues.
-            <span className="font-semibold text-emerald"> Each submission is automatically verified on the blockchain for transparency.</span>
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-onyx mb-4">Kirim Masukan</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Share your concerns and we&apos;ll transform them into a professional document. 
+            Your feedback will be processed by AI and stored securely on the blockchain.
           </p>
+        </div>
 
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-8 border border-gray-100 shadow-lg">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
               {error}
             </div>
           )}
 
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-              <div className="flex items-center mb-2">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <strong>Feedback submitted successfully!</strong>
-              </div>
-              
-              {success.blockchain?.verified && (
-                <div className="mt-3 p-3 bg-green-100 rounded border">
-                  <div className="flex items-center mb-2">
-                    <svg className="w-4 h-4 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="font-semibold text-green-800">Blockchain Verified!</span>
-                  </div>
-                  <p className="text-sm text-green-700 mb-2">
-                    Your feedback has been permanently recorded on the blockchain for transparency and immutability.
-                  </p>
-                  <div className="text-xs text-green-600">
-                    <p><strong>Transaction Hash:</strong> {success.blockchain.transactionHash}</p>
-                    <a 
-                      href={success.blockchain.verificationUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-green-600 hover:text-green-800 underline"
-                    >
-                      View on Blockchain Explorer →
-                    </a>
-                  </div>
-                </div>
-              )}
-              
-              <p className="text-sm mt-2">Redirecting to dashboard in 5 seconds...</p>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Complaint Title *
+                Judul Masukan *
               </label>
               <input
                 type="text"
                 id="title"
                 name="title"
                 value={formData.title}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-transparent transition-all"
-                placeholder="Brief title for your complaint..."
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-transparent transition-colors"
+                placeholder="Ringkas masalah atau saran Anda"
                 required
-                disabled={loading}
               />
             </div>
 
+            {/* Location Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Province */}
+              <div>
+                <label htmlFor="provinsi" className="block text-sm font-medium text-gray-700 mb-2">
+                  Provinsi *
+                </label>
+                <select
+                  id="provinsi"
+                  name="provinsi"
+                  value={formData.provinsi}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-transparent transition-colors"
+                  required
+                >
+                  <option value="">Pilih Provinsi</option>
+                  {getProvinces().map((province) => (
+                    <option key={province} value={province}>
+                      {province}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* City */}
+              <div>
+                <label htmlFor="kota" className="block text-sm font-medium text-gray-700 mb-2">
+                  Kota *
+                </label>
+                <select
+                  id="kota"
+                  name="kota"
+                  value={formData.kota}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-transparent transition-colors"
+                  required
+                  disabled={!formData.provinsi}
+                >
+                  <option value="">Pilih Kota</option>
+                  {availableLocations.map((location) => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Regency */}
+              <div>
+                <label htmlFor="kabupaten" className="block text-sm font-medium text-gray-700 mb-2">
+                  Kabupaten *
+                </label>
+                <select
+                  id="kabupaten"
+                  name="kabupaten"
+                  value={formData.kabupaten}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-transparent transition-colors"
+                  required
+                  disabled={!formData.provinsi}
+                >
+                  <option value="">Pilih Kabupaten</option>
+                  {availableLocations.map((location) => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Specific Location (Optional) */}
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                Lokasi Spesifik (Opsional)
+              </label>
+              <input
+                type="text"
+                id="location"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-transparent transition-colors"
+                placeholder="Contoh: Jl. Sudirman No. 123, Kelurahan ABC"
+              />
+            </div>
+
+            {/* Content */}
             <div>
               <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                Your Complaint *
+                Isi Masukan *
               </label>
               <textarea
                 id="content"
                 name="content"
-                value={formData.content}
-                onChange={handleInputChange}
                 rows={8}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-transparent transition-all resize-none"
-                placeholder="Describe your issue in detail. Don't worry about formal language - our AI will clean it up and make it professional..."
+                value={formData.content}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald focus:border-transparent transition-colors resize-none"
+                placeholder="Jelaskan masalah, keluhan, atau saran Anda secara detail..."
                 required
-                disabled={loading}
               />
             </div>
 
-            <div className="bg-emerald/5 border border-emerald/20 rounded-lg p-4">
-              <h3 className="font-semibold text-emerald mb-2">What happens next?</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• AI will analyze and clean your complaint</li>
-                <li>• Automatically categorize by topic (infrastructure, safety, etc.)</li>
-                <li>• Cluster with similar complaints from other citizens</li>
-                <li>• Generate a professional document</li>
-                <li>• <strong className="text-emerald">Create blockchain verification for transparency</strong></li>
-                <li>• Provide you with a permanent verification link</li>
-              </ul>
+            {/* Submit Button */}
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="bg-emerald hover:bg-sage text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {submitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Mengirim...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    <span>Kirim Masukan</span>
+                  </>
+                )}
+              </button>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-emerald hover:bg-sage text-white px-6 py-4 rounded-lg font-semibold text-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing & Verifying...
-                </div>
-              ) : (
-                'Submit Complaint'
-              )}
-            </button>
           </form>
         </div>
       </div>
