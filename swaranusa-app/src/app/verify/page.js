@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function VerifyPage() {
+function VerifyContent() {
   const [verificationData, setVerificationData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -166,5 +166,39 @@ export default function VerifyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald/5 via-white to-sage/10">
+      <nav className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <h1 className="text-2xl font-bold text-onyx">Blockchain Verification</h1>
+            <a href="/dashboard" className="text-gray-600 hover:text-emerald transition-colors">
+              Back to Dashboard
+            </a>
+          </div>
+        </div>
+      </nav>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-8 border border-gray-100 shadow-lg">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-full mb-8"></div>
+            <div className="h-12 bg-gray-200 rounded mb-6"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <VerifyContent />
+    </Suspense>
   );
 }
