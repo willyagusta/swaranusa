@@ -35,11 +35,24 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {user ? (
-                <>
-                  <Link href="/dashboard" className="text-gray-600 hover:text-emerald transition-colors font-medium">
+                {user ? (
+              <>
+                {user.role === "citizen" && (
+                  <Link 
+                    href="/dashboard" 
+                    className="text-gray-600 hover:text-emerald transition-colors font-medium"
+                  >
                     Dashboard
                   </Link>
+                )}
+                {user.role === "government" && (
+                  <Link 
+                    href="/government" 
+                    className="text-gray-600 hover:text-emerald transition-colors font-medium"
+                  >
+                    Citizen Reports
+                  </Link>
+                )}
                   <span className="text-gray-600">
                     {user.firstName} {user.lastName}
                   </span>
