@@ -14,7 +14,7 @@ export async function POST(request) {
     
     // Find user by email
     const users = await sql`
-      SELECT id, email, password, first_name, last_name 
+      SELECT id, email, password, first_name, last_name, role, department, position 
       FROM users 
       WHERE email = ${validatedData.email}
     `;
@@ -49,6 +49,9 @@ export async function POST(request) {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
+        role: user.role,
+        department: user.department,
+        position: user.position,
       },
     });
     

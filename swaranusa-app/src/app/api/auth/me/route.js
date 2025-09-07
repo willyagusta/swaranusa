@@ -16,7 +16,7 @@ export async function GET() {
     }
     
     const users = await sql`
-      SELECT id, email, first_name, last_name 
+      SELECT id, email, first_name, last_name, role, department, position 
       FROM users 
       WHERE id = ${session.userId}
     `;
@@ -37,6 +37,9 @@ export async function GET() {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
+        role: user.role,
+        department: user.department,
+        position: user.position,
       },
     });
     

@@ -21,7 +21,8 @@ export default function AuthPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      router.push('/dashboard');
+      const redirectPath = user.role === 'government' ? '/government' : '/dashboard';
+      router.push(redirectPath);
     }
   }, [user, router]);
 
@@ -41,7 +42,9 @@ export default function AuthPage() {
       });
       
       if (result.success) {
-        router.push('/dashboard');
+        // Get the user from auth context after successful signin
+        const redirectPath = user?.role === 'government' ? '/government' : '/dashboard';
+        router.push(redirectPath);
       }
     } else {
       const result = await signUp({
@@ -53,6 +56,7 @@ export default function AuthPage() {
       });
       
       if (result.success) {
+        // New users are citizens by default, redirect to dashboard
         router.push('/dashboard');
       }
     }
