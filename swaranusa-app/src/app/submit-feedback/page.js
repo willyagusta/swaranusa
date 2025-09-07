@@ -82,7 +82,7 @@ export default function SubmitComplaint() {
             Submit Your Citizen Complaint
           </h2>
           <p className="text-gray-600 mb-8">
-            Share your concerns and we'll transform them into a professional document. 
+            Share your concerns and we will transform them into a professional document. 
             Our AI will automatically categorize and cluster your feedback with similar issues.
             <span className="font-semibold text-emerald"> Each submission is automatically verified on the blockchain for transparency.</span>
           </p>
