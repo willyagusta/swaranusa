@@ -16,6 +16,7 @@
     "drizzle-orm": "^0.44.4",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.2",
     "next": "15.5.0",
     "ollama": "^0.5.17",
     "react": "19.1.0",
