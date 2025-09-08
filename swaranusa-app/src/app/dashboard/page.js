@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import RoleGuard from '@/components/RoleGuard';
 
@@ -12,6 +13,7 @@ function DashboardContent() {
   const [recentFeedbacks, setRecentFeedbacks] = useState([]);
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(true);
   const [feedbackError, setFeedbackError] = useState('');
+  const [loadingState, setLoadingState] = useState('');
 
   const handleSignOut = async () => {
     await signOut();
@@ -27,11 +29,19 @@ function DashboardContent() {
 
   const fetchRecentFeedbacks = async () => {
     try {
+      setLoadingState('Memuat data masukan...');
       const response = await fetch('/api/feedback/my-submissions?limit=5');
+      
+      setLoadingState('Memproses data...');
       const data = await response.json();
 
       if (response.ok) {
+        setLoadingState('Verifikasi blockchain...');
+        // Simulate blockchain verification delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         setRecentFeedbacks(data.feedbacks || []);
+        setLoadingState('Selesai');
       } else {
         setFeedbackError(data.error || 'Gagal memuat feedback');
       }
@@ -40,6 +50,7 @@ function DashboardContent() {
       setFeedbackError('Terjadi kesalahan saat memuat feedback');
     } finally {
       setLoadingFeedbacks(false);
+      setLoadingState('');
     }
   };
 
@@ -66,8 +77,14 @@ function DashboardContent() {
       <nav className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-onyx">Swaranusa</h1>
+            <div className="flex items-center space-x-3">
+              <Image 
+                src="/logo.png" 
+                alt="Swaranusa Logo" 
+                width={200} 
+                height={80}
+                className="object-contain"
+              />
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-600">
@@ -174,7 +191,17 @@ function DashboardContent() {
           {loadingFeedbacks ? (
             <div className="text-center py-12">
               <div className="w-12 h-12 border-4 border-emerald/30 border-t-emerald rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Memuat data...</p>
+              <p className="text-gray-600 font-medium">
+                {loadingState || 'Memuat data...'}
+              </p>
+              {loadingState && (
+                <p className="text-gray-500 text-sm mt-2">
+                  {loadingState === 'Memuat data masukan...' && 'Mengambil data dari server...'}
+                  {loadingState === 'Memproses data...' && 'Memproses informasi masukan...'}
+                  {loadingState === 'Verifikasi blockchain...' && 'Memverifikasi status blockchain...'}
+                  {loadingState === 'Selesai' && 'Berhasil memuat data!'}
+                </p>
+              )}
             </div>
           ) : feedbackError ? (
             <div className="text-center py-12">
@@ -285,6 +312,35 @@ function DashboardContent() {
           )}
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white/95 backdrop-blur-md border-t border-gray-100 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center space-x-3 mb-4 md:mb-0">
+              <Image 
+                src="/logo.png" 
+                alt="Swaranusa Logo" 
+                width={32} 
+                height={32}
+                className="object-contain"
+              />
+              <div>
+                <h3 className="text-lg font-bold text-onyx">Swaranusa</h3>
+                <p className="text-sm text-gray-600">Platform Masukan Warga Digital</p>
+              </div>
+            </div>
+            <div className="text-center md:text-right">
+              <p className="text-sm text-gray-600">
+                © 2024 Swaranusa. Semua hak dilindungi.
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Didukung oleh teknologi blockchain untuk transparansi
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

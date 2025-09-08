@@ -89,11 +89,8 @@ export default function AuthPage() {
       <div className="w-full max-w-md relative">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-block mb-8">
-            <h1 className="text-3xl font-bold text-onyx">PublishPro™</h1>
-          </Link>
           <h2 className="text-4xl font-bold text-onyx mb-4">
-            {mode === 'signin' ? 'Welcome Back' : 'Join PublishPro™'}
+            {mode === 'signin' ? 'Selamat Datang di Swaranusa' : 'Buat Akun Swaranusa'}
           </h2>
           <p className="text-gray-600 text-lg">
             {mode === 'signin' 

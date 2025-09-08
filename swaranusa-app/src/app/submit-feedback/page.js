@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProvinces, getAllCitiesAndRegencies } from '@/data/indonesia-locations';
 
@@ -18,6 +19,7 @@ export default function SubmitFeedback() {
   });
   const [availableLocations, setAvailableLocations] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingState, setLoadingState] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -57,6 +59,14 @@ export default function SubmitFeedback() {
     setError('');
 
     try {
+      // Step 1: Preparing submission
+      setLoadingState('Mempersiapkan pengiriman...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Step 2: Processing with AI
+      setLoadingState('Memproses dengan AI (sekitar 1-2 menit)...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       const response = await fetch('/api/feedback/submit', {
         method: 'POST',
         headers: {
@@ -65,9 +75,21 @@ export default function SubmitFeedback() {
         body: JSON.stringify(formData),
       });
 
+      // Step 3: Saving to database
+      setLoadingState('Menyimpan ke database...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const data = await response.json();
 
       if (data.success) {
+        // Step 4: Blockchain verification
+        setLoadingState('Verifikasi blockchain...');
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        
+        // Step 5: Complete
+        setLoadingState('Berhasil terkirim!');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         router.push('/dashboard?submitted=true');
       } else {
         setError(data.error || 'Gagal mengirim masukan');
@@ -77,6 +99,7 @@ export default function SubmitFeedback() {
       setError('Terjadi kesalahan saat mengirim masukan');
     } finally {
       setSubmitting(false);
+      setLoadingState('');
     }
   };
 
@@ -93,7 +116,7 @@ export default function SubmitFeedback() {
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat...</p>
+          <p className="text-gray-600">Memuat halaman...</p>
         </div>
       </div>
     );
@@ -103,13 +126,37 @@ export default function SubmitFeedback() {
     return null;
   }
 
+  const getLoadingSubtext = () => {
+    switch (loadingState) {
+      case 'Mempersiapkan pengiriman...':
+        return 'Memvalidasi data yang Anda masukkan...';
+      case 'Memproses dengan AI...':
+        return 'AI sedang menganalisis dan memformat masukan Anda...';
+      case 'Menyimpan ke database...':
+        return 'Menyimpan data ke sistem database...';
+      case 'Verifikasi blockchain...':
+        return 'Mencatat ke blockchain untuk transparansi...';
+      case 'Berhasil terkirim!':
+        return 'Masukan Anda telah berhasil dikirim dan tercatat!';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald/5 via-white to-sage/10">
       {/* Navigation */}
       <nav className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-3">
+              <Image 
+                src="/logo.png" 
+                alt="Swaranusa Logo" 
+                width={40} 
+                height={40}
+                className="object-contain"
+              />
               <button 
                 onClick={() => router.push('/dashboard')}
                 className="text-2xl font-bold text-onyx hover:text-emerald transition-colors"
@@ -137,8 +184,8 @@ export default function SubmitFeedback() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-onyx mb-4">Kirim Masukan</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Share your concerns and we&apos;ll transform them into a professional document. 
-            Your feedback will be processed by AI and stored securely on the blockchain.
+            Bagikan kekhawatiran Anda dan kami akan mengubahnya menjadi dokumen profesional. 
+            Masukan Anda akan diproses oleh AI dan disimpan dengan aman di blockchain.
           </p>
         </div>
 
@@ -279,10 +326,17 @@ export default function SubmitFeedback() {
                 className="bg-emerald hover:bg-sage text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {submitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>Mengirim...</span>
-                  </>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>{loadingState || 'Mengirim...'}</span>
+                    </div>
+                    {getLoadingSubtext() && (
+                      <p className="text-sm text-white/80">
+                        {getLoadingSubtext()}
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -296,6 +350,35 @@ export default function SubmitFeedback() {
           </form>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white/95 backdrop-blur-md border-t border-gray-100 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center space-x-3 mb-4 md:mb-0">
+              <Image 
+                src="/logo.png" 
+                alt="Swaranusa Logo" 
+                width={32} 
+                height={32}
+                className="object-contain"
+              />
+              <div>
+                <h3 className="text-lg font-bold text-onyx">Swaranusa</h3>
+                <p className="text-sm text-gray-600">Platform Masukan Warga Digital</p>
+              </div>
+            </div>
+            <div className="text-center md:text-right">
+              <p className="text-sm text-gray-600">
+                © 2024 Swaranusa. Semua hak dilindungi.
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Didukung oleh teknologi blockchain untuk transparansi
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

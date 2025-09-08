@@ -72,7 +72,15 @@ function MyFeedbacksContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Link href="/dashboard" className="text-2xl font-bold text-onyx">Swaranusa</Link>
+              <div className="flex items-center space-x-3">
+                <Image 
+                  src="/logo.png" 
+                  alt="Swaranusa Logo" 
+                  width={200} 
+                  height={80}
+                  className="object-contain"
+                />
+              </div>
               <span className="text-gray-400">|</span>
               <h2 className="text-lg font-medium text-gray-700">Masukan Saya</h2>
             </div>

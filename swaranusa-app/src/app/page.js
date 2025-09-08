@@ -24,7 +24,15 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-onyx">Swaranusa</h1>
+                <div className="flex items-center space-x-3">
+                  <Image 
+                    src="/logo.png" 
+                    alt="Swaranusa Logo" 
+                    width={200} 
+                    height={80}
+                    className="object-contain"
+                  />
+                </div>
               </div>
             </div>
             <div className="hidden md:block">
@@ -357,7 +365,15 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
-              <h3 className="text-2xl font-bold mb-4">Swaranusa</h3>
+              <div className="flex items-center space-x-3">
+                <Image 
+                  src="/logo.png" 
+                  alt="Swaranusa Logo" 
+                  width={200} 
+                  height={80}
+                  className="object-contain"
+                />
+              </div>
               <p className="text-gray-300 leading-relaxed">
                 Empowering citizens to transform complaints into professional documents with AI and blockchain technology. 
                 Making democracy more accessible, transparent, and effective for everyone.
