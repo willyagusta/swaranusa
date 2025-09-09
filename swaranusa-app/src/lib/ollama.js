@@ -17,21 +17,36 @@ export class FeedbackClusteringService {
         Analyze this Indonesian citizen feedback/complaint and extract the following information in JSON format:
         
         Feedback: "${feedbackText}"
-        Location: ${provinsi}, ${kota}, ${kabupaten}${location ? `, ${location}` : ''}
+        Location: ${provinsi}${kota ? `, ${kota}` : ''}${kabupaten ? `, ${kabupaten}` : ''}${location ? `, ${location}` : ''}
         
-        Please provide:
+        IMPORTANT: Categorize based on the MAIN PROBLEM being complained about, not who handles it.
+        All text outputs must be in Indonesian language.
+        
+        Provide response in this exact format:
         {
           "cleanedContent": "Professional version without profanity or excessive emotion, in Indonesian",
-          "category": "One of: infrastruktur, kesehatan, pendidikan, lingkungan, transportasi, keamanan, ekonomi, sosial, pemerintahan, teknologi",
-          "urgency": "One of: low, medium, high",
-          "sentiment": "One of: positive, negative, neutral",
+          "category": "CHOOSE ONE from: infrastruktur, kesehatan, pendidikan, lingkungan, transportasi, keamanan, ekonomi, sosial, pemerintahan, teknologi",
+          "urgency": "CHOOSE ONE from: low, medium, high",
+          "sentiment": "CHOOSE ONE from: positive, negative, neutral",
           "tags": ["array", "of", "relevant", "keywords", "in", "Indonesian"],
-          "locationRelevance": "How relevant is the location to this issue (high/medium/low)",
-          "suggestedDepartment": "Which government department should handle this"
+          "locationRelevance": "CHOOSE ONE from: high, medium, low",
+          "suggestedDepartment": "Which government department should handle this, in Indonesian"
         }
 
+        CATEGORIZATION GUIDE:
+        - infrastruktur: damaged roads, bridges, drainage, clean water, electricity
+        - kesehatan: hospitals, clinics, medicines, doctors, medical facilities
+        - pendidikan: schools, teachers, learning facilities, curriculum, scholarships
+        - lingkungan: garbage, pollution, cleanliness, parks, environmental damage
+        - transportasi: public transport, traffic, parking, transportation facilities
+        - keamanan: crime, safety, security, police services
+        - ekonomi: business permits, markets, economic development, unemployment
+        - sosial: social services, community issues, social welfare
+        - pemerintahan: government services, bureaucracy, administrative issues, corruption
+        - teknologi: digital services, internet, technology infrastructure
+
         Consider the location context when determining category and urgency.
-        Respond only with valid JSON.
+        Respond ONLY with valid JSON, no additional text.
       `;
 
       const response = await ollama.chat({
@@ -47,7 +62,7 @@ export class FeedbackClusteringService {
         console.warn('Failed to parse AI response as JSON:', response.message.content);
         result = {
           cleanedContent: feedbackText,
-          category: 'pemerintahan',
+          category: 'sosial',
           urgency: 'medium',
           sentiment: 'neutral',
           tags: ['masukan', 'warga'],
@@ -65,7 +80,7 @@ export class FeedbackClusteringService {
       console.error('Error processing feedback with Ollama:', error);
       return {
         cleanedContent: feedbackText,
-        category: 'pemerintahan',
+        category: 'sosial',
         urgency: 'medium',
         sentiment: 'neutral',
         tags: ['masukan', 'warga'],
@@ -88,7 +103,8 @@ export class FeedbackClusteringService {
 
     try {
       const prompt = `
-        Analyze if this new feedback should be clustered with existing ones:
+        Analyze if this new Indonesian feedback should be clustered with existing ones.
+        All reasoning must be in Indonesian language.
         
         NEW FEEDBACK:
         Content: "${newFeedback.content}"
@@ -101,16 +117,21 @@ export class FeedbackClusteringService {
         ${idx + 1}. ID: ${fb.id}, Content: "${fb.content.substring(0, 200)}...", Category: ${fb.category}, Cluster: ${fb.clusterId}
         `).join('')}
         
-        Respond with JSON:
+        Rules for clustering:
+        - Same category + similar location (same province/city) + similar content = cluster together
+        - Different categories = separate clusters
+        - Same category but very different locations = separate clusters
+        - Similarity score: 80+ = cluster together, 50-79 = maybe, <50 = separate
+        
+        Respond with JSON (reason must be in Indonesian):
         {
           "suggestedClusterId": number or null,
           "shouldCreateNewCluster": boolean,
           "similarityScore": number (0-100),
-          "reason": "explanation in Indonesian"
+          "reason": "explanation in Indonesian language"
         }
         
-        Consider location proximity, category match, and content similarity.
-        Feedbacks from same province/city with similar issues should cluster together.
+        Respond ONLY with valid JSON.
       `;
 
       const response = await ollama.chat({
@@ -145,21 +166,32 @@ export class FeedbackClusteringService {
   async generateClusterName(feedbacks) {
     try {
       const prompt = `
-        Generate a cluster name and description for these related feedbacks in Indonesian:
+        Generate a cluster name and description for these related Indonesian feedbacks.
+        All outputs must be in Indonesian language.
         
+        FEEDBACKS:
         ${feedbacks.map((fb, idx) => `
         ${idx + 1}. Category: ${fb.category}, Content: "${fb.content.substring(0, 150)}..."
         Location: ${fb.originalLocation ? `${fb.originalLocation.provinsi}, ${fb.originalLocation.kota}` : 'Unknown'}
         `).join('')}
         
-        Respond with JSON:
+        Create a cluster that represents the common theme of these feedbacks.
+        Focus on the main issue/problem, not the location or government department.
+        
+        Respond with JSON (all text in Indonesian):
         {
-          "name": "Short descriptive name in Indonesian (max 50 chars)",
-          "description": "Brief description of the common issue (max 200 chars)",
+          "name": "Short descriptive name in Indonesian (max 50 characters)",
+          "description": "Brief description of the common issue in Indonesian (max 200 characters)",
           "keywords": ["array", "of", "key", "terms", "in", "Indonesian"]
         }
         
-        Focus on the common theme and location if relevant.
+        Examples of good cluster names:
+        - "Masalah Jalan Rusak"
+        - "Keluhan Fasilitas Kesehatan"
+        - "Permasalahan Sampah"
+        - "Kendala Transportasi Umum"
+        
+        Respond ONLY with valid JSON.
       `;
 
       const response = await ollama.chat({
@@ -189,7 +221,7 @@ export class FeedbackClusteringService {
     }
   }
 
-  // New method for generating responses (used by report generator)
+  // Method for generating responses (used by report generator)
   async generateResponse(prompt) {
     try {
       const response = await ollama.chat({

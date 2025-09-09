@@ -197,7 +197,7 @@ function GovernmentContent() {
     setSelectedReport(report);
   };
 
-  const generateReport = async (category, location) => {
+  const generateReport = async (category, kota, kabupaten, provinsi) => {
     setGenerating(true);
     try {
       const response = await fetch('/api/government/reports', {
@@ -205,7 +205,7 @@ function GovernmentContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ category, location }),
+        body: JSON.stringify({ category, kota, kabupaten, provinsi }),
       });
 
       const data = await response.json();
@@ -458,17 +458,17 @@ function GovernmentContent() {
                       {dashboardData.availableReports.slice(0, 10).map((item, index) => (
                         <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
                           <div>
-                            <p className="font-semibold">{item.category} - {item.location}</p>
+                            <p className="font-semibold">{item.category} - {item.location_display}</p>
                             <p className="text-sm text-gray-600">
                               {item.feedback_count} feedback, {item.high_priority_count} prioritas tinggi
                             </p>
                           </div>
                           <button
-                            onClick={() => generateReport(item.category, item.location)}
+                            onClick={() => generateReport(item.category, item.kota, item.kabupaten, item.provinsi)}
                             disabled={generating}
                             className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 disabled:opacity-50"
                           >
-                            {generating ? 'Membuat...' : 'Buat Laporan'}
+                            {generating ? 'AI Sedang Membuat Laporan..(2-3 menit)' : 'Buat Laporan'}
                           </button>
                         </div>
                       ))}
@@ -716,11 +716,14 @@ function GovernmentContent() {
           <div className="bg-white rounded-lg max-w-5xl w-full max-h-screen overflow-hidden flex flex-col">
             <div className="p-6 border-b bg-gray-50">
               <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedReport.title}</h2>
-                  <p className="text-gray-600 mt-1">
-                    {selectedReport.category} • {selectedReport.location} • {selectedReport.total_feedbacks} feedback
-                  </p>
+                <div className="flex items-center space-x-4">
+                  <img src="/logosquare.png" alt="Logo Swaranusa" className="h-12 w-max" />
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{selectedReport.title}</h2>
+                    <p className="text-gray-600 mt-1">
+                      {selectedReport.category} • {selectedReport.location} • {selectedReport.total_feedbacks} feedback
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setSelectedReport(null)}
@@ -734,10 +737,13 @@ function GovernmentContent() {
             </div>
             <div className="flex-1 overflow-y-auto p-6">
               <div className="prose max-w-none">
-                <h3>Ringkasan Eksekutif</h3>
-                <p>{selectedReport.executive_summary}</p>
-                <h3>Laporan Lengkap</h3>
-                <div className="whitespace-pre-line">{selectedReport.report_content}</div>
+                <h3><strong>RINGKASAN LAPORAN</strong></h3>
+                <div dangerouslySetInnerHTML={{ __html: selectedReport.executive_summary }} />
+                
+                <div className="my-8"></div>
+                
+                <h3><strong>LAPORAN LENGKAP</strong></h3>
+                <div dangerouslySetInnerHTML={{ __html: selectedReport.report_content }} />
               </div>
             </div>
           </div>

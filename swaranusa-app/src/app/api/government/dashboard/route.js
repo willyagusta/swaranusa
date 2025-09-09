@@ -91,14 +91,26 @@ export async function GET(request) {
     const availableReports = await sql`
       SELECT 
         category,
-        location,
+        kota,
+        kabupaten,
+        provinsi,
+        CASE 
+          WHEN kota IS NOT NULL AND kabupaten IS NOT NULL AND kota != kabupaten 
+          THEN CONCAT(kota, ', ', kabupaten, ', ', provinsi)
+          WHEN kota IS NOT NULL 
+          THEN CONCAT(kota, ', ', provinsi)
+          WHEN kabupaten IS NOT NULL 
+          THEN CONCAT(kabupaten, ', ', provinsi)
+          ELSE provinsi
+        END as location_display,
         COUNT(*) as feedback_count,
         COUNT(CASE WHEN urgency = 'high' THEN 1 END) as high_priority_count,
         MAX(created_at) as latest_feedback
       FROM feedbacks
       WHERE category IS NOT NULL 
-      AND location IS NOT NULL
-      GROUP BY category, location
+      AND provinsi IS NOT NULL
+      AND (kota IS NOT NULL OR kabupaten IS NOT NULL)
+      GROUP BY category, kota, kabupaten, provinsi
       HAVING COUNT(*) >= 3
       ORDER BY feedback_count DESC, high_priority_count DESC
     `;

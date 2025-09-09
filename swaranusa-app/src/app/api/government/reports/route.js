@@ -102,27 +102,48 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { category, location } = body;
+    const { category, kota, kabupaten, provinsi } = body;
 
-    if (!category || !location) {
+    if (!category || !kota || !provinsi) {
       return NextResponse.json(
-        { error: 'Category and location are required' },
+        { error: 'Category, kota, and provinsi are required' },
         { status: 400 }
       );
     }
 
     // Get feedbacks for the specified category and location
-    const feedbacks = await sql`
-      SELECT 
-        f.*,
-        u.first_name,
-        u.last_name
-      FROM feedbacks f
-      JOIN users u ON f.user_id = u.id
-      WHERE f.category = ${category} 
-      AND f.location = ${location}
-      ORDER BY f.created_at DESC
-    `;
+    let feedbacks;
+    
+    if (kabupaten && kabupaten !== kota) {
+      // Search by kota, kabupaten, and provinsi
+      feedbacks = await sql`
+        SELECT 
+          f.*,
+          u.first_name,
+          u.last_name
+        FROM feedbacks f
+        JOIN users u ON f.user_id = u.id
+        WHERE f.category = ${category} 
+        AND f.kota = ${kota}
+        AND f.kabupaten = ${kabupaten}
+        AND f.provinsi = ${provinsi}
+        ORDER BY f.created_at DESC
+      `;
+    } else {
+      // Search by kota and provinsi (when kota is same as kabupaten or kabupaten not specified)
+      feedbacks = await sql`
+        SELECT 
+          f.*,
+          u.first_name,
+          u.last_name
+        FROM feedbacks f
+        JOIN users u ON f.user_id = u.id
+        WHERE f.category = ${category} 
+        AND (f.kota = ${kota} OR f.kabupaten = ${kota})
+        AND f.provinsi = ${provinsi}
+        ORDER BY f.created_at DESC
+      `;
+    }
 
     if (feedbacks.length === 0) {
       return NextResponse.json(
@@ -131,19 +152,22 @@ export async function POST(request) {
       );
     }
 
-    // Generate AI report
-    const reportData = await reportGenerator.generateReport(feedbacks, category, location);
+    // Generate AI report with new parameters
+    const reportData = await reportGenerator.generateReport(feedbacks, category, kota, kabupaten, provinsi);
 
-    // Save report to database
+    // Save report to database with new structure
     const [newReport] = await sql`
       INSERT INTO government_reports (
-        title, category, location, report_content, executive_summary,
+        title, category, kota, kabupaten, provinsi, location, report_content, executive_summary,
         key_findings, recommendations, feedback_ids, total_feedbacks,
         sentiment_breakdown, urgency_breakdown, generated_by, status
       )
       VALUES (
         ${reportData.title},
         ${reportData.category},
+        ${reportData.kota},
+        ${reportData.kabupaten},
+        ${reportData.provinsi},
         ${reportData.location},
         ${reportData.reportContent},
         ${reportData.executiveSummary},
@@ -212,7 +236,7 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       report: newReport,
-      message: `Laporan berhasil dibuat dengan ${feedbacks.length} feedback. Status feedback telah diperbarui.`,
+      message: `Laporan berhasil dibuat untuk ${reportData.location} dengan ${feedbacks.length} feedback. Status feedback telah diperbarui.`,
       feedbacksUpdated: feedbackIds ? feedbackIds.length : 0
     });
 

@@ -91,6 +91,6 @@ export const governmentReports = pgTable('government_reports', {
   keyFindings: jsonb('key_findings'), // Array of key findings
   recommendations: jsonb('recommendations'), // Array of recommendations
   reportContent: text('report_content'), // Full report text
-  createdBy: integer('created_by').references(() => users.id),
+  generatedBy: integer('generated_by').references(() => users.id), // Changed from createdBy
   createdAt: timestamp('created_at').defaultNow(),
 });
