@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import RoleGuard from '@/components/RoleGuard';
+import Image from "next/image";
 
 function MyFeedbacksContent() {
   const { user, signOut } = useAuth();
