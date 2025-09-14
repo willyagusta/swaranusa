@@ -259,20 +259,19 @@ Rekomendasi tindak lanjut yang spesifik untuk kondisi lokal disediakan berdasark
     5. KESIMPULAN DAN IMPLIKASI
     
     CRITICAL FORMATTING RULES - FOLLOW EXACTLY:
-    - For section titles, use: <br><br><strong>SECTION TITLE</strong><br>
-    - For paragraph breaks within sections, use: <br><br>
-    - For line breaks, use: <br>
+    - For section titles, use: <strong>SECTION TITLE</strong>
+    - For paragraph breaks, use: <br><br>
     - NEVER use ** or *** or any markdown formatting
     - ONLY use HTML tags: <strong>, <br>, <em>
-    - Each section starts with <br><br> before the title
-    - Content follows immediately after the title with just <br> (no double break)
+    - Start directly with first section title (no leading <br>)
+    - Each new section starts with <br><br> before the title
     
     Example format:
-    <br><br><strong>PENDAHULUAN</strong><br>
+    <strong>PENDAHULUAN</strong><br>
     First paragraph content here.<br><br>
     Second paragraph content here.<br><br>
     
-    <br><br><strong>PROFIL WILAYAH</strong><br>
+    <strong>PROFIL WILAYAH</strong><br>
     Content here.<br><br>
     
     Write in formal Indonesian language. DO NOT include letterhead or logo.
@@ -286,12 +285,16 @@ Rekomendasi tindak lanjut yang spesifik untuk kondisi lokal disediakan berdasark
       console.log(`🤖 Detailed report AI response received in ${Date.now() - aiStart}ms`);
       console.log('📖 Report preview (first 200 chars):', response.substring(0, 200) + '...');
       
-      // cleanup of markdown formatting
+      // cleanup of markdown formatting and excessive spacing
       let cleanedResponse = response.trim()
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Replace **text** with <strong>text</strong>
         .replace(/\*(.*?)\*/g, '<em>$1</em>')              // Replace *text* with <em>text</em>
+        .replace(/\n\n\n+/g, '\n\n')                       // Reduce multiple newlines to max 2
         .replace(/\n\n/g, '<br><br>')                       // Replace double newlines with <br><br>
-        .replace(/\n/g, '<br>');                            // Replace single newlines with <br>
+        .replace(/\n/g, '<br>')                             // Replace single newlines with <br>
+        .replace(/<br><br><br>/g, '<br><br>')               // Remove triple breaks
+        .replace(/^<br><br>/, '')                           // Remove leading breaks
+        .replace(/<br><br>$/, '');                          // Remove trailing breaks
       
       console.log('🧹 Cleaned response preview (first 200 chars):', cleanedResponse.substring(0, 200) + '...');
       
@@ -397,30 +400,28 @@ Rekomendasi tindak lanjut yang spesifik untuk kondisi lokal disediakan berdasark
     console.log('🔄 Generating fallback report...');
     const locationContext = this.formatLocationDisplay(kota, kabupaten, provinsi);
     
-    return `
-<br><br><strong>PENDAHULUAN</strong><br>
+    return `<strong>PENDAHULUAN</strong><br>
 Laporan ini menyajikan hasil analisis komprehensif terhadap ${feedbacks.length} feedback warga yang disampaikan melalui platform digital Swaranusa mengenai masalah ${category} di wilayah ${locationContext}. Platform Swaranusa merupakan sistem aspirasi dan pengaduan masyarakat yang memungkinkan warga untuk menyampaikan keluhan, saran, dan masukan secara digital dengan verifikasi blockchain untuk memastikan integritas dan akurasi data.<br><br>
 
 Wilayah ${kota ? `kota/kabupaten ${kota}` : `kabupaten ${kabupaten}`} dalam provinsi ${provinsi} memiliki karakteristik geografis dan demografis yang unik, yang menjadi pertimbangan penting dalam analisis feedback warga yang masuk melalui aplikasi Swaranusa.<br><br>
 
-<br><br><strong>PROFIL WILAYAH</strong><br>
+<strong>PROFIL WILAYAH</strong><br>
 ${locationContext} merupakan bagian integral dari provinsi ${provinsi} dengan karakteristik sosial-ekonomi yang beragam. Feedback warga yang disampaikan melalui platform Swaranusa mencerminkan kebutuhan dan tantangan spesifik yang dihadapi masyarakat di wilayah ini dalam kategori ${category}.<br><br>
 
-<br><br><strong>TEMUAN KUNCI</strong><br>
+<strong>TEMUAN KUNCI</strong><br>
 Berdasarkan analisis terhadap feedback warga melalui Swaranusa, ditemukan beberapa temuan kunci sebagai berikut:<br><br>
 ${keyFindings.map((finding, i) => `${i + 1}. ${finding}<br>`).join('')}<br><br>
 
-<br><br><strong>ANALISIS TEMUAN</strong><br>
+<strong>ANALISIS TEMUAN</strong><br>
 Feedback yang masuk melalui platform Swaranusa menunjukkan pola-pola tertentu yang mencerminkan kondisi riil di lapangan. Setiap feedback telah diverifikasi menggunakan teknologi blockchain untuk memastikan keaslian dan mencegah manipulasi data. Analisis dilakukan dengan menggunakan teknologi AI untuk mengidentifikasi pola, sentimen, dan tingkat urgensi dari setiap submission warga.<br><br>
 
-<br><br><strong>GAMBARAN STATISTIK</strong><br>
+<strong>GAMBARAN STATISTIK</strong><br>
 Periode pengumpulan feedback melalui Swaranusa menunjukkan keterlibatan aktif warga ${locationContext} dalam menyampaikan aspirasi dan keluhan terkait ${category}. Platform digital ini memungkinkan warga untuk berpartisipasi dalam proses pembangunan dengan cara yang lebih mudah dan transparan. Distribusi feedback menunjukkan berbagai tingkat kekhawatiran dengan deskripsi rinci tentang pengalaman masyarakat dan usulan perbaikan.<br><br>
 
-<br><br><strong>KESIMPULAN DAN IMPLIKASI</strong><br>
+<strong>KESIMPULAN DAN IMPLIKASI</strong><br>
 Feedback warga yang disampaikan melalui platform Swaranusa mengungkapkan wawasan penting tentang kondisi ${category} di ${locationContext}. Temuan ini menunjukkan perlunya koordinasi antara pemerintah ${kota ? `kota/kabupaten ${kota}` : `kabupaten ${kabupaten}`} dengan pemerintah provinsi ${provinsi} untuk mengatasi masalah yang teridentifikasi.<br><br>
 
-Platform digital Swaranusa telah membuktikan efektivitasnya sebagai sarana komunikasi antara masyarakat dan pemerintah. Data yang terkumpul melalui aplikasi ini memberikan gambaran yang akurat tentang aspirasi warga dan dapat menjadi dasar untuk perumusan kebijakan yang lebih responsif terhadap kebutuhan masyarakat.
-    `;
+Platform digital Swaranusa telah membuktikan efektivitasnya sebagai sarana komunikasi antara masyarakat dan pemerintah. Data yang terkumpul melalui aplikasi ini memberikan gambaran yang akurat tentang aspirasi warga dan dapat menjadi dasar untuk perumusan kebijakan yang lebih responsif terhadap kebutuhan masyarakat.`;
   }
 
   generateFallbackRecommendations(keyFindings, urgencyBreakdown, kota, kabupaten, provinsi) {

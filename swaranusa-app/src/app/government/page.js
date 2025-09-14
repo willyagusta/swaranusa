@@ -263,59 +263,284 @@ function GovernmentContent() {
       const pageWidth = pdf.internal.pageSize.width;
       const pageHeight = pdf.internal.pageSize.height;
       const margin = 20;
+      const footerHeight = 70; // Reserve more space for footer
       let yPosition = margin;
 
-      const addText = (text, fontSize = 12, isBold = false) => {
-        pdf.setFontSize(fontSize);
-        if (isBold) {
-          pdf.setFont(undefined, 'bold');
-        } else {
-          pdf.setFont(undefined, 'normal');
-        }
+      // Preload Swaranusa logo as data URL for footer branding
+      let swaranusaLogoDataUrl = null;
+      try {
+        const resp = await fetch('/logosquare.png');
+        const blob = await resp.blob();
+        swaranusaLogoDataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      } catch (e) {
+        console.warn('Could not load Swaranusa logo for PDF footer:', e);
+      }
 
-        const lines = pdf.splitTextToSize(text, pageWidth - 2 * margin);
+      // Helper function to strip HTML tags and clean text
+      const stripHTML = (html) => {
+        if (!html) return '';
+        return html
+          .replace(/<br\s*\/?><br\s*\/?>/gi, '\n\n')
+          .replace(/<br\s*\/?>/gi, '\n')  
+          .replace(/<strong>(.*?)<\/strong>/gi, '$1')
+          .replace(/<em>(.*?)<\/em>/gi, '$1')
+          .replace(/<[^>]*>/g, '')
+          .replace(/\n\n\n+/g, '\n\n')
+          .replace(/^\s+|\s+$/g, '')
+          .trim();
+      };
+
+      // Simple function to add text with automatic page breaks
+      const addText = (text, fontSize = 12, isBold = false, leftMargin = margin, lineHeightFactor = 0.6, trailingSpacing = 3) => {
+        if (!text) return;
         
-        if (yPosition + (lines.length * fontSize * 0.5) > pageHeight - margin) {
+        pdf.setFontSize(fontSize);
+        pdf.setFont(undefined, isBold ? 'bold' : 'normal');
+
+        const cleanText = stripHTML(text);
+        if (!cleanText) return;
+        
+        const lines = pdf.splitTextToSize(cleanText, pageWidth - leftMargin - margin);
+        const lineHeight = fontSize * lineHeightFactor; // line spacing factor
+        
+        let idx = 0;
+        while (idx < lines.length) {
+          const remainingSpace = (pageHeight - footerHeight) - yPosition;
+          let maxLines = Math.floor(remainingSpace / lineHeight);
+          if (maxLines < 1) {
+            pdf.addPage();
+            yPosition = margin;
+            continue;
+          }
+          const end = Math.min(idx + maxLines, lines.length);
+          const chunk = lines.slice(idx, end);
+          pdf.text(chunk, leftMargin, yPosition);
+          yPosition += chunk.length * lineHeight + trailingSpacing;
+          idx = end;
+        }
+      };
+
+      const addSpacing = (space = 5) => {
+        yPosition += space;
+      };
+
+      // Render formatted HTML: collapse double breaks, bold headings, bullets with spacing, compact paragraphs
+      const renderFormattedHtml = (html) => {
+        if (!html) return;
+        const normalized = html.replace(/<br><br>/gi, '<br>');
+        const tokens = normalized.split(/<br>/i).map(t => t.trim());
+        let paragraphBuffer = [];
+
+        const flushParagraph = () => {
+          if (paragraphBuffer.length === 0) return;
+          const text = paragraphBuffer.join(' ');
+          addText(text, 11);
+          paragraphBuffer = [];
+        };
+
+        tokens.forEach((token) => {
+          if (!token) return;
+          // Heading line only
+          const h = token.match(/^<strong>(.*?)<\/strong>\s*$/i);
+          if (h) {
+            // Flush previous paragraph before heading
+            flushParagraph();
+            addText(h[1], 12, true);
+            return; // No spacing here; content should follow immediately
+          }
+
+          // Bullet line
+          if (/^\d+\.\s/.test(token) || /^[-•]\s/.test(token)) {
+            flushParagraph();
+            const text = token.replace(/^\d+\.\s|^[-•]\s/, '').trim();
+            addText(`• ${text}`, 11, false, margin + 6, 0.6, 1); // minimal spacing between bullets
+            return;
+          }
+
+          // Normal line (part of a paragraph)
+          paragraphBuffer.push(token);
+        });
+
+        // Flush last paragraph
+        flushParagraph();
+      };
+
+      // Add section header with smart page breaking
+      const addSectionHeader = (title, content, fontSize = 14) => {
+        // Calculate if we can fit title + some content on current page
+        const titleHeight = fontSize * 0.6;
+        const contentPreview = stripHTML(content).substring(0, 200); // First 200 chars
+        const contentLines = pdf.splitTextToSize(contentPreview, pageWidth - 2 * margin);
+        const minContentHeight = Math.min(contentLines.length * 11 * 0.6, 50); // At least some content
+        const requiredSpace = titleHeight + minContentHeight + 10;
+        
+        // If we can't fit title + meaningful content, move to next page
+        if (yPosition + requiredSpace > pageHeight - footerHeight) {
           pdf.addPage();
           yPosition = margin;
         }
-
-        pdf.text(lines, margin, yPosition);
-        yPosition += lines.length * fontSize * 0.5 + 5;
+        
+        addText(title, fontSize, true);
+        // No spacing after header - content follows immediately
       };
 
-      // PDF Content
+      // === DOCUMENT HEADER ===
+      addText('PEMERINTAH REPUBLIK INDONESIA', 14, true);
+      addText(`PEMERINTAH PROVINSI ${report.provinsi?.toUpperCase() || 'DAERAH'}`, 12, true);
+      if (report.kota || report.kabupaten) {
+        addText(`${report.kota ? 'KOTA' : 'KABUPATEN'} ${(report.kota || report.kabupaten)?.toUpperCase()}`, 12, true);
+      }
+      addSpacing(10);
+      
+      // Divider line
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+      addSpacing(12);
+      
+      // === REPORT TITLE ===
       addText(report.title, 18, true);
-      yPosition += 10;
+      addSpacing(15);
 
-      addText(`Kategori: ${report.category}`, 12, true);
-      addText(`Lokasi: ${report.location}`, 12, true);
-      addText(`Dibuat: ${formatDate(report.created_at)}`, 12);
-      addText(`Total Feedback: ${report.total_feedbacks}`, 12);
-      yPosition += 10;
+      // === METADATA ===
+      addText(`Kategori: ${report.category}`, 11, true);
+      addText(`Lokasi: ${report.location}`, 11, true);
+      addText(`Dibuat pada: ${formatDate(report.created_at)}`, 10);
+      addText(`Total Feedback Dianalisis: ${report.totalFeedbacks || report.total_feedbacks || 0}`, 10);
+      
+      // Statistics
+      if (report.sentimentBreakdown || report.sentiment_breakdown) {
+        const sentiment = report.sentimentBreakdown || report.sentiment_breakdown;
+        addText(`Analisis Sentimen: Positif ${sentiment.positive || 0}, Negatif ${sentiment.negative || 0}, Netral ${sentiment.neutral || 0}`, 10);
+      }
+      
+      if (report.urgencyBreakdown || report.urgency_breakdown) {
+        const urgency = report.urgencyBreakdown || report.urgency_breakdown;
+        addText(`Tingkat Urgensi: Tinggi ${urgency.high || 0}, Sedang ${urgency.medium || 0}, Rendah ${urgency.low || 0}`, 10);
+      }
+      
+      addSpacing(12);
 
-      addText('RINGKASAN EKSEKUTIF', 14, true);
-      addText(report.executive_summary, 11);
-      yPosition += 10;
+      // === EXECUTIVE SUMMARY ===
+      if (report.executiveSummary || report.executive_summary) {
+        const execSummary = report.executiveSummary || report.executive_summary;
+        // Force start on a new page for executive summary section
+        pdf.addPage();
+        yPosition = margin;
+        addSectionHeader('RINGKASAN EKSEKUTIF', execSummary);
+        renderFormattedHtml(execSummary);
+      }
 
-      addText('TEMUAN KUNCI', 14, true);
-      const keyFindings = safeJSONParse(report.key_findings, []);
-      keyFindings.forEach((finding, index) => {
-        addText(`${index + 1}. ${finding}`, 11);
-      });
-      yPosition += 10;
+      // === FULL REPORT CONTENT ===
+      if (report.reportContent || report.report_content) {
+        const reportContent = report.reportContent || report.report_content;
+        addSectionHeader('LAPORAN LENGKAP', reportContent);
+        renderFormattedHtml(reportContent);
+      }
 
-      addText('REKOMENDASI', 14, true);
-      const recommendations = safeJSONParse(report.recommendations, []);
-      recommendations.forEach((rec, index) => {
-        addText(`${index + 1}. ${rec.recommendation || rec}`, 11, true);
-        if (rec.priority && rec.timeline && rec.department) {
-          addText(`   Prioritas: ${rec.priority} | Timeline: ${rec.timeline} | Departemen: ${rec.department}`, 10);
+      // === KEY FINDINGS ===
+      const keyFindings = report.keyFindings || report.key_findings;
+      if (keyFindings && keyFindings.length > 0) {
+        const findings = Array.isArray(keyFindings) ? keyFindings : safeJSONParse(keyFindings, []);
+        
+        if (findings.length > 0) {
+          const findingsText = findings.map((finding, index) => `${index + 1}. ${finding}`).join('\n');
+          addSectionHeader('TEMUAN KUNCI', findingsText);
+          findings.forEach((finding) => {
+            addText(`• ${finding}`, 11, false, margin + 6, 0.6, 1); // minimal spacing between bullets
+          });
+          addSpacing(4);
         }
-        yPosition += 5;
-      });
+      }
 
-      pdf.save(`Laporan_${report.category}_${report.location}_${new Date().toISOString().split('T')[0]}.pdf`);
+      // === RECOMMENDATIONS ===
+      const recommendations = report.recommendations;
+      if (recommendations && recommendations.length > 0) {
+        const recs = Array.isArray(recommendations) ? recommendations : safeJSONParse(recommendations, []);
+        
+        if (recs.length > 0) {
+          const recsText = recs.map((rec, index) => `${index + 1}. ${rec.recommendation || rec}`).join('\n');
+          addSectionHeader('REKOMENDASI', recsText);
+          
+          recs.forEach((rec, index) => {
+            const recText = rec.recommendation || rec;
+            addText(`${index + 1}. ${recText}`, 11, true);
+            
+            // Add recommendation details
+            if (rec.priority) {
+              addText(`Prioritas: ${rec.priority}`, 10, false, margin + 15);
+            }
+            if (rec.timeline) {
+              addText(`Timeline: ${rec.timeline}`, 10, false, margin + 15);
+            }
+            if (rec.department) {
+              addText(`Departemen: ${rec.department}`, 10, false, margin + 15);
+            }
+
+            if (rec.success_indicators) {
+              addText(`Indikator Keberhasilan: ${rec.success_indicators}`, 10, false, margin + 15);
+            }
+            
+            addSpacing(8);
+          });
+        }
+      }
+
+      // === ADD FOOTER TO ALL PAGES ===
+      const addFooterToAllPages = () => {
+        const totalPages = pdf.internal.getNumberOfPages();
+        
+        for (let i = 1; i <= totalPages; i++) {
+          pdf.setPage(i);
+          
+          const footerY = pageHeight - 50;
+          
+          // Footer line
+          pdf.setLineWidth(0.3);
+          pdf.line(margin, footerY, pageWidth - margin, footerY);
+          
+          // Footer text
+          pdf.setFontSize(9);
+          pdf.setFont(undefined, 'normal');
+          pdf.text('Laporan ini dibuat berdasarkan analisis feedback warga melalui Platform Swaranusa', margin, footerY + 8);
+          pdf.text('dengan dukungan teknologi AI dan verifikasi blockchain untuk memastikan integritas data.', margin, footerY + 16);
+          
+          if (swaranusaLogoDataUrl) {
+            try {
+              pdf.addImage(swaranusaLogoDataUrl, 'PNG', pageWidth - margin - 16, footerY + 6, 12, 12);
+            } catch (e) {
+              pdf.setFontSize(12);
+              pdf.setFont(undefined, 'bold');
+              pdf.text('SWARANUSA', pageWidth - margin - 40, footerY + 12);
+            }
+          } else {
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('SWARANUSA', pageWidth - margin - 40, footerY + 12);
+          }
+          
+          // Page number
+          pdf.setFontSize(8);
+          pdf.setFont(undefined, 'normal');
+          pdf.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin - 25, footerY + 25);
+        }
+      };
+
+      addFooterToAllPages();
+
+      // === SAVE PDF ===
+      const now = new Date();
+      const jakartaDate = now.toLocaleDateString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).replace(/\//g, '-');
+      
+      pdf.save(`Laporan_${report.category}_${report.location}_${jakartaDate}.pdf`);
       
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -744,6 +969,36 @@ function GovernmentContent() {
                 
                 <h3><strong>LAPORAN LENGKAP</strong></h3>
                 <div dangerouslySetInnerHTML={{ __html: selectedReport.report_content }} />
+
+                {/* Recommendations Section */}
+                <div className="my-8"></div>
+                <h3><strong>REKOMENDASI</strong></h3>
+                {(() => {
+                  let recs = selectedReport.recommendations;
+                  if (!Array.isArray(recs)) {
+                    recs = safeJSONParse(recs, []);
+                  }
+                  if (!recs || recs.length === 0) {
+                    return <p className="text-gray-600">Tidak ada rekomendasi</p>;
+                  }
+                  return (
+                    <ol className="list-decimal ml-6 space-y-3">
+                      {recs.map((rec, idx) => (
+                        <li key={idx}>
+                          <p className="font-semibold">{rec.recommendation || rec}</p>
+                          {(rec.priority || rec.timeline || rec.department || rec.budget_estimate || rec.success_indicators) && (
+                            <div className="text-sm text-gray-700 mt-1 space-y-1">
+                              {rec.priority && (<p><span className="font-medium">Prioritas:</span> {rec.priority}</p>)}
+                              {rec.timeline && (<p><span className="font-medium">Timeline:</span> {rec.timeline}</p>)}
+                              {rec.department && (<p><span className="font-medium">Departemen:</span> {rec.department}</p>)}
+                              {rec.success_indicators && (<p><span className="font-medium">Indikator Keberhasilan:</span> {rec.success_indicators}</p>)}
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  );
+                })()}
               </div>
             </div>
           </div>
