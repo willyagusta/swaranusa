@@ -176,26 +176,26 @@ export default function Home() {
         <div className="relative z-10 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 w-full">
           <div className="text-center max-w-5xl mx-auto">
             <div className="text-white animate-slide-in-left">
-              <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-10 leading-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-10 leading-tight -mt-15">
                 AI & Blockchain yang Bikin Curhatan Warga
                 <span className="block text-purple-900 min-h-[1.2em]">
                   <TypingAnimation />
                 </span>
               </h1>
-              <p className="text-xl md:text-2xl text-white/95 mb-8 max-w-4xl leading-relaxed font-medium mx-auto">
+              <p className="text-medium md:text-lg text-white/95 mb-8 max-w-4xl leading-relaxed font-light mx-auto">
                 Swaranusa mengonversi keluhan warga mentah menjadi dokumen profesional terstruktur menggunakan AI & memverifikasi laporan dengan Blockchain. 
                 Masyarakat tidak lagi merasa bingung bagaimana menjangkau & menyampaikan keluhan pada wakil rakyat.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animate-delay-400">
                 <button 
                   onClick={() => user ? window.location.href = '/dashboard' : openAuthModal('signup')}
-                  className="bg-purple-800 text-white hover:bg-gray-100 hover:text-red-600 px-8 py-4 rounded-2xl font-bold text-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  className="bg-purple-800 text-white hover:bg-gray-100 hover:text-red-600 px-8 py-4 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                 >
                   Kirim Keluhan Anda
                 </button>
                 <button 
                   onClick={() => document.getElementById('cara-kerja')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="border-2 border-white text-white hover:bg-white hover:text-red-600 px-8 py-4 rounded-2xl font-bold text-2xl transition-all duration-300"
+                  className="border-2 border-white text-white hover:bg-white hover:text-red-600 px-8 py-4 rounded-2xl font-bold text-xl transition-all duration-300"
                 >
                   Lihat Cara Kerja
                 </button>
