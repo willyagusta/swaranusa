@@ -93,7 +93,7 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Navigation */}
       <nav className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm animate-fade-in-down">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -147,12 +147,6 @@ export default function Home() {
               ) : (
                 <>
                   <button 
-                    onClick={() => openAuthModal('signin')}
-                    className="text-gray-600 hover:text-red-600 transition-colors font-medium"
-                  >
-                    Masuk
-                  </button>
-                  <button 
                     onClick={() => openAuthModal('signup')}
                     className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
                   >
@@ -179,7 +173,7 @@ export default function Home() {
         </div>
         
         {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="relative z-10 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 w-full">
           <div className="text-center max-w-5xl mx-auto">
             <div className="text-white animate-slide-in-left">
               <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-10 leading-tight">
@@ -189,20 +183,19 @@ export default function Home() {
                 </span>
               </h1>
               <p className="text-xl md:text-2xl text-white/95 mb-8 max-w-4xl leading-relaxed font-medium mx-auto">
-                Swaranusa mengonversi keluhan warga mentah menjadi dokumen profesional terstruktur menggunakan AI. 
-                Dari umpatan emosional menjadi laporan formal dengan verifikasi blockchain - memberdayakan warga 
-                untuk didengar pemerintah dan media dengan dokumentasi otentik anti-manipulasi.
+                Swaranusa mengonversi keluhan warga mentah menjadi dokumen profesional terstruktur menggunakan AI & memverifikasi laporan dengan Blockchain. 
+                Masyarakat tidak lagi merasa bingung bagaimana menjangkau & menyampaikan keluhan pada wakil rakyat.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animate-delay-400">
                 <button 
                   onClick={() => user ? window.location.href = '/dashboard' : openAuthModal('signup')}
-                  className="bg-white text-red-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  className="bg-purple-800 text-white hover:bg-gray-100 hover:text-red-600 px-8 py-4 rounded-2xl font-bold text-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                 >
                   Kirim Keluhan Anda
                 </button>
                 <button 
-                  onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="border-2 border-white text-white hover:bg-white hover:text-red-600 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300"
+                  onClick={() => document.getElementById('cara-kerja')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="border-2 border-white text-white hover:bg-white hover:text-red-600 px-8 py-4 rounded-2xl font-bold text-2xl transition-all duration-300"
                 >
                   Lihat Cara Kerja
                 </button>
@@ -214,7 +207,7 @@ export default function Home() {
 
       {/* Features Section */}
       <section id="fitur" className="py-20 bg-white fade-in-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
               Advokasi Warga Berbasis AI & Blockchain
@@ -224,7 +217,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 lg:gap-20">
+          <div className="grid md:grid-cols-3 gap-12 lg:gap-20">
             {/* AI Document Creation */}
             <div className="relative fade-in-section">
               <div className="bg-white rounded-2xl p-8 lg:p-12 h-full border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -234,10 +227,10 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
-                  Generasi Dokumen Cerdas
+                  Penyusunan Dokumen Cerdas
                 </h3>
                 <p className="text-gray-600 text-lg mb-6 leading-relaxed font-medium">
-                  AI membersihkan keluhan mentah Anda, menghapus profanitas, mengekstrak detail kunci, 
+                  AI mengolah keluhan Anda, mengekstrak kata kunci, 
                   dan membuat dokumen semi-formal profesional yang dapat ditanggapi serius oleh pemerintah dan media.
                 </p>
                 <ul className="space-y-3 text-gray-600">
@@ -252,10 +245,6 @@ export default function Home() {
                   <li className="flex items-center font-medium">
                     <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
                     Format profesional
-                  </li>
-                  <li className="flex items-center font-medium">
-                    <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
-                    Dukungan multi-media (gambar, video, suara)
                   </li>
                 </ul>
               </div>
@@ -289,9 +278,40 @@ export default function Home() {
                     <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
                     Sertifikat anti-manipulasi
                   </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Report */}
+            <div className="relative fade-in-section">
+              <div className="bg-white rounded-2xl p-8 lg:p-12 h-full border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center mb-6 shadow-lg">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 2a1 1 0 00-1 1v1H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2h-3V3a1  1 0 00-1-1H9zm3 12l-2-2m0 0l-2 2m2-2v6" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
+                  Pantau Perkembangan Laporan
+                </h3>
+                <p className="text-gray-600 text-lg mb-6 leading-relaxed font-medium">
+                Warga dapat memantau dan mengikuti setiap laporan, termasuk melihat pejabat yang membaca, menanggapi, dan menindaklanjutinya.
+                </p>
+                <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center font-medium">
                     <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
-                    Sistem upvoting warga
+                    Lihat siapa saja pejabat yang membaca
+                  </li>
+                  <li className="flex items-center font-medium">
+                    <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
+                    Ikuti status laporan yang masuk
+                  </li>
+                  <li className="flex items-center font-medium">
+                    <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
+                    Ketahui siapa pejabat yang bertanggung jawab atas laporan
+                  </li>
+                  <li className="flex items-center font-medium">
+                    <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
+                    Akses statistik kinerja pejabat terkait
                   </li>
                 </ul>
               </div>
@@ -302,13 +322,13 @@ export default function Home() {
 
       {/* How It Works */}
       <section id="cara-kerja" className="py-20 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 fade-in-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
               Laporan dalam Hitungan Menit
             </h2>
             <p className="text-xl text-white/90 max-w-3xl mx-auto font-medium">
-              Ubah frustrasi Anda menjadi dokumentasi profesional yang mendapat hasil
+              Ubah rasa ketidakpuasan Anda menjadi laporan resmi yang akan diproses pemerintah
             </p>
           </div>
 
@@ -326,8 +346,8 @@ export default function Home() {
               },
               {
                 step: "02", 
-                title: "Pemrosesan AI",
-                description: "AI membersihkan profanitas, mengekstrak isu kunci, mengidentifikasi lokasi dan urgensi, serta menyusun konten secara profesional.",
+                title: "Pengolahan Dokumen oleh AI",
+                description: "AI mengolah masukan, mengekstrak isu kunci, mengidentifikasi lokasi dan urgensi, serta menyusun kategori konten secara profesional.",
                 icon: (
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -336,8 +356,8 @@ export default function Home() {
               },
               {
                 step: "03",
-                title: "Generasi Dokumen",
-                description: "Dapatkan laporan semi-formal profesional dengan judul, ringkasan, penilaian dampak dan tindakan yang diminta.",
+                title: "Pembuatan Dokumen",
+                description: "AI menyusun laporan semi-formal profesional dengan judul, ringkasan, penilaian dampak dan tindakan yang diminta.",
                 icon: (
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -347,7 +367,7 @@ export default function Home() {
               {
                 step: "04",
                 title: "Bukti Blockchain",
-                description: "Dokumen di-hash dan diberi timestamp di blockchain. Unduh PDF atau bagikan link verifikasi dengan otoritas.",
+                description: "Dokumen di-hash dan diberi timestamp di blockchain. Hal ini memastikan laporan yang dikirimkan asli dan tidak diubah.",
                 icon: (
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -374,13 +394,13 @@ export default function Home() {
 
       {/* Impact Section */}
       <section id="dampak" className="py-20 bg-white fade-in-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
               Memberdayakan Partisipasi Demokratis
             </h2>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto font-medium">
-              Swaranusa menjembatani kesenjangan antara frustrasi warga dan tindakan pemerintah melalui teknologi dan transparansi.
+              Swaranusa menjembatani kesenjangan antara rasa ketidakpuasan warga dan tindakan pemerintah melalui teknologi dan transparansi.
             </p>
           </div>
 
@@ -427,7 +447,7 @@ export default function Home() {
           <div className="text-center">
             <button 
               onClick={() => user ? window.location.href = '/dashboard' : openAuthModal('signup')}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               Suarakan Aspirasi Anda
             </button>
@@ -437,7 +457,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-gradient-to-r from-red-600 to-red-700 text-white py-12 fade-in-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-4">
@@ -460,7 +480,6 @@ export default function Home() {
                 <li><a href="#" className="hover:text-white transition-colors font-medium">Cara Kerja</a></li>
                 <li><a href="#" className="hover:text-white transition-colors font-medium">Verifikasi Blockchain</a></li>
                 <li><a href="#" className="hover:text-white transition-colors font-medium">Template Dokumen</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">Akses API</a></li>
               </ul>
             </div>
             <div>
@@ -469,7 +488,6 @@ export default function Home() {
                 <li><a href="#" className="hover:text-white transition-colors font-medium">Pusat Bantuan</a></li>
                 <li><a href="#" className="hover:text-white transition-colors font-medium">Hubungi Kami</a></li>
                 <li><a href="#" className="hover:text-white transition-colors font-medium">Kebijakan Privasi</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">Syarat Layanan</a></li>
               </ul>
             </div>
           </div>
