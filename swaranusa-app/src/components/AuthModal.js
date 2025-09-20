@@ -86,12 +86,12 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
           {/* Header */}
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-onyx mb-2">
-              {mode === 'signin' ? 'Welcome Back' : 'Join PublishPro™'}
+              {mode === 'signin' ? 'Selamat Datang!' : 'Bergabung dengan Swaranusa'}
             </h2>
             <p className="text-gray-600">
               {mode === 'signin' 
-                ? 'Sign in to your account to continue' 
-                : 'Create your account to get started'
+                ? 'Silakan masuk ke akun Anda untuk melanjutkan' 
+                : 'Buat akun Swaranusa untuk memulai'
               }
             </p>
           </div>
@@ -109,7 +109,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name
+                    Nama Depan
                   </label>
                   <input
                     type="text"
@@ -124,7 +124,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
                 </div>
                 <div>
                   <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Last Name
+                    Nama Belakang
                   </label>
                   <input
                     type="text"
@@ -142,7 +142,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+                Alamat Email
               </label>
               <input
                 type="email"
@@ -158,7 +158,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
+                Kata Sandi
               </label>
               <input
                 type="password"
@@ -175,7 +175,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
             {mode === 'signup' && (
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
+                  Konfirmasi Kata Sandi
                 </label>
                 <input
                   type="password"
@@ -193,15 +193,15 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-emerald hover:bg-sage text-white py-3 px-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full bg-red-600 hover:bg-purple-900 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {loading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                  {mode === 'signin' ? 'Signing In...' : 'Creating Account...'}
+                  {mode === 'signin' ? 'Masuk ke Dalam Akun...' : 'Membuat Akun...'}
                 </div>
               ) : (
-                mode === 'signin' ? 'Sign In' : 'Create Account'
+                mode === 'signin' ? 'Suarakan Masukanmu' : 'Buat Akun'
               )}
             </button>
           </form>
@@ -209,12 +209,12 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
           {/* Toggle Mode */}
           <div className="mt-8 text-center">
             <p className="text-gray-600">
-              {mode === 'signin' ? "Don't have an account? " : "Already have an account? "}
+              {mode === 'signin' ? "Belum punya akun? " : "Sudah punya akun? "}
               <button
                 onClick={toggleMode}
-                className="text-emerald hover:text-sage font-medium transition-colors"
+                className="text-purple-600 hover:text-purple-900 font-medium transition-colors"
               >
-                {mode === 'signin' ? 'Sign Up' : 'Sign In'}
+                {mode === 'signin' ? 'Buat Akun' : 'Masuk ke Dalam Akun'}
               </button>
             </p>
           </div>
