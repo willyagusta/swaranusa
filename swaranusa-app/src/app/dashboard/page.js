@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import RoleGuard from '@/components/RoleGuard';
+import Sidebar from '@/components/dashboard/Sidebar';
+import TopNavigation from '@/components/dashboard/TopNavigation';
+import FeedbackCard from '@/components/dashboard/FeedbackCard';
+import SubmitFeedbackTab from '@/components/dashboard/SubmitFeedbackTab';
+import MyFeedbacksTab from '@/components/dashboard/MyFeedbacksTab';
+import VerifyTab from '@/components/dashboard/VerifyTab';
+import ClustersTab from '@/components/dashboard/ClustersTab';
 
 function DashboardContent() {
   const { user, loading, signOut } = useAuth();
@@ -15,11 +20,35 @@ function DashboardContent() {
   const [feedbackError, setFeedbackError] = useState('');
   const [loadingState, setLoadingState] = useState('');
   const [sidebarMinimized, setSidebarMinimized] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [verifyHash, setVerifyHash] = useState('');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleSignOut = async () => {
     await signOut();
     router.push('/');
   };
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+  };
+
+  const handleFeedbackSubmitted = () => {
+    // Refresh feedbacks and switch to my-feedbacks tab
+    setRefreshTrigger(prev => prev + 1);
+    setActiveTab('my-feedbacks');
+  };
+
+  // Global function to switch to verify tab with hash
+  useEffect(() => {
+    window.switchToVerifyTab = (hash) => {
+      setVerifyHash(hash);
+      setActiveTab('verify');
+    };
+    return () => {
+      delete window.switchToVerifyTab;
+    };
+  }, []);
 
   // Fetch user's recent feedback submissions
   useEffect(() => {
@@ -72,85 +101,19 @@ function DashboardContent() {
     return text.substring(0, maxLength) + '...';
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
-      <nav className="bg-red-600 text-white px-4 py-3 flex justify-between items-center">
-        <div className="text-sm">Selamat Datang, Willy</div>
-        <button 
-          onClick={handleSignOut}
-          className="bg-white text-red-600 px-3 py-1 rounded text-sm font-medium hover:bg-gray-100 transition-colors"
-        >
-          Keluar
-        </button>
-      </nav>
-
-      <div className="flex">
-        {/* Sidebar */}
-        <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${sidebarMinimized ? 'w-16' : 'w-64'} min-h-screen`}>
-          {/* Logo Section */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <Image 
-                src="/logosquare.png" 
-                alt="Swaranusa Logo" 
-                width={32} 
-                height={32}
-                className="object-contain flex-shrink-0"
-              />
-              {!sidebarMinimized && (
-                <span className="font-bold text-red-600">swaranusa</span>
-              )}
-            </div>
-          </div>
-
-          {/* Sidebar Toggle */}
-          <div className="p-4">
-            <button 
-              onClick={() => setSidebarMinimized(!sidebarMinimized)}
-              className="w-full flex items-center justify-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sidebarMinimized ? "M13 5l7 7-7 7M5 5l7 7-7 7" : "M11 19l-7-7 7-7m8 14l-7-7 7-7"} />
-              </svg>
-            </button>
-          </div>
-
-          {/* Navigation Menu */}
-          <nav className="px-4 space-y-2">
-            <Link href="/submit-feedback" className="flex items-center space-x-3 p-3 text-red-600 bg-red-50 rounded-lg font-medium">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              {!sidebarMinimized && <span>Kirim Masukan</span>}
-            </Link>
-
-            <Link href="/my-feedbacks" className="flex items-center space-x-3 p-3 text-gray-600 hover:bg-gray-100 rounded-lg">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2" />
-              </svg>
-              {!sidebarMinimized && <span>Masukan Saya</span>}
-            </Link>
-
-            <Link href="/clusters" className="flex items-center space-x-3 p-3 text-gray-600 hover:bg-gray-100 rounded-lg">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              {!sidebarMinimized && <span>Lihat Cluster</span>}
-            </Link>
-
-            <Link href="/verify" className="flex items-center space-x-3 p-3 text-gray-600 hover:bg-gray-100 rounded-lg">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              {!sidebarMinimized && <span>Verifikasi Blockchain</span>}
-            </Link>
-          </nav>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8">
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'submit-feedback':
+        return <SubmitFeedbackTab user={user} onFeedbackSubmitted={handleFeedbackSubmitted} />;
+      case 'my-feedbacks':
+        return <MyFeedbacksTab user={user} refreshTrigger={refreshTrigger} />;
+      case 'verify':
+        return <VerifyTab initialHash={verifyHash} />;
+      case 'clusters':
+        return <ClustersTab user={user} onNavigateToSubmit={() => setActiveTab('submit-feedback')} />;
+      default:
+        return (
+          <div className="max-w-screen-2xl mx-auto">
             {/* Page Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Warga</h1>
@@ -197,53 +160,52 @@ function DashboardContent() {
                 <div className="text-center py-12">
                   <p className="text-gray-500 text-lg mb-2">Belum ada aktivitas</p>
                   <p className="text-gray-400 mb-4">Mulai dengan mengirim masukan pertama Anda!</p>
-                  <Link 
-                    href="/submit-feedback"
+                  <button 
+                    onClick={() => setActiveTab('submit-feedback')}
                     className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     <span>Kirim Masukan Pertama</span>
-                  </Link>
+                  </button>
                 </div>
               ) : (
                 <>
                   {/* Sample feedback cards based on the image */}
                   {Array.from({ length: 6 }).map((_, index) => (
-                    <div key={index} className="bg-white rounded-lg border border-gray-200 p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            Sulit Mencari Pekerjaan
-                          </h3>
-                          <p className="text-gray-600 text-sm mb-3">
-                            Sulit mencari pekerjaan karena tempat usaha banyak yang tutup
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2 ml-4">
-                          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-                            Jalan Tamin
-                          </span>
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                            Pemerintahan
-                          </span>
-                          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-                            Prioritas: Sedang
-                          </span>
-                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                            Terverifikasi Blockchain
-                          </span>
-                          <span className="text-gray-500 text-sm">
-                            6/01/2025 17:57
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    <FeedbackCard 
+                      key={index} 
+                      feedback={{}} 
+                      formatDate={formatDate}
+                    />
                   ))}
                 </>
               )}
             </div>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation */}
+      <TopNavigation user={user} onSignOut={handleSignOut} />
+
+      <div className="flex">
+        {/* Sidebar */}
+        <Sidebar 
+          sidebarMinimized={sidebarMinimized}
+          setSidebarMinimized={setSidebarMinimized}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        />
+
+        {/* Main Content */}
+        <div className="flex-1">
+          <div className="px-4 sm:px-6 lg:px-8 xl:px-12 py-8">
+            {renderTabContent()}
           </div>
         </div>
       </div>
