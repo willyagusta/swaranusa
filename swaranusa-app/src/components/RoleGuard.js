@@ -11,7 +11,7 @@ export default function RoleGuard({ children, allowedRoles, redirectTo = '/signi
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push('/signin');
+        router.push('/');
         return;
       }
 

@@ -3,49 +3,62 @@
 import Link from 'next/link';
 
 export default function FeedbackCard({ feedback, formatDate }) {
+  const currentDate = new Date();
+  const demoDate = formatDate ? formatDate(currentDate.toISOString()) : 
+    currentDate.toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'numeric', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Jakarta'
+    });
+  
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {feedback.title || "Sulit Mencari Pekerjaan"}
-          </h3>
-          <p className="text-gray-600 text-sm mb-3">
-            {feedback.content || "Sulit mencari pekerjaan karena tempat usaha banyak yang tutup"}
-          </p>
-        </div>
-        <div className="flex items-center space-x-2 ml-4">
-          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-            {feedback.location || "Jalan Tamin"}
+      <div className="flex items-start justify-between mb-2">
+        <h3 className="text-lg font-semibold text-gray-900 flex-1 mr-4">
+          {feedback.title || "Sulit Mencari Pekerjaan"}
+        </h3>
+        <span className="text-gray-500 text-sm whitespace-nowrap">
+          {feedback.created_at ? formatDate(feedback.created_at) : demoDate}
+        </span>
+      </div>
+      
+      {/* Description */}
+      <p className="text-gray-600 text-sm mb-4">
+        {feedback.content || "Sulit mencari pekerjaan karena tempat usaha banyak yang tutup"}
+      </p>
+      
+      {/* Tags section */}
+      <div className="flex items-center space-x-2">
+        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+          {feedback.location || "Jalan Tamin"}
+        </span>
+        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+          {feedback.category || "Pemerintahan"}
+        </span>
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          feedback.urgency === 'high' 
+            ? 'bg-red-100 text-red-800' 
+            : feedback.urgency === 'medium'
+            ? 'bg-yellow-100 text-yellow-800'
+            : 'bg-yellow-100 text-yellow-800'
+        }`}>
+          Prioritas: {
+            feedback.urgency === 'high' ? 'Tinggi' : 
+            feedback.urgency === 'medium' ? 'Sedang' : 
+            'Sedang'
+          }
+        </span>
+        {(feedback.blockchain_verified !== false) && (
+          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+            Terverifikasi Blockchain
           </span>
-          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-            {feedback.category || "Pemerintahan"}
-          </span>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            feedback.urgency === 'high' 
-              ? 'bg-red-100 text-red-800' 
-              : feedback.urgency === 'medium'
-              ? 'bg-yellow-100 text-yellow-800'
-              : 'bg-green-100 text-green-800'
-          }`}>
-            Prioritas: {
-              feedback.urgency === 'high' ? 'Tinggi' : 
-              feedback.urgency === 'medium' ? 'Sedang' : 
-              'Sedang'
-            }
-          </span>
-          {feedback.blockchain_verified && (
-            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-              Terverifikasi Blockchain
-            </span>
-          )}
-          <span className="text-gray-500 text-sm">
-            {formatDate ? formatDate(feedback.created_at) : "6/01/2025 17:57"}
-          </span>
-        </div>
+        )}
       </div>
 
-      {/* Additional details for detailed view */}
+      {/* Additional details */}
       {feedback.showDetails && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
