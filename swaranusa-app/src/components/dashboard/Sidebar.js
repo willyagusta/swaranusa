@@ -13,46 +13,95 @@ export default function Sidebar({
       id: 'dashboard',
       label: 'Dashboard Warga',
       icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0M8 11h.01M12 11h.01M16 11h.01" />
-        </svg>
+        <div className="w-5 h-5 flex-shrink-0 relative">
+          <Image 
+            src="/icon/dashboard.png" 
+            alt="Dashboard" 
+            width={20}
+            height={20}
+            className={`transition-all duration-200 ${
+              activeTab === 'dashboard' 
+                ? 'filter brightness-100 opacity-100'  
+                : 'filter brightness-0 opacity-60'
+            }`}
+          />
+        </div>
       )
     },
     {
       id: 'submit-feedback',
       label: 'Kirim Masukan',
       icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
+        <div className="w-5 h-5 flex-shrink-0 relative">
+          <Image 
+            src="/icon/add.png" 
+            alt="send-feedback" 
+            width={20}
+            height={20}
+            className={`transition-all duration-200 ${
+              activeTab === 'submit-feedback' 
+                ? 'filter brightness-100 opacity-100' 
+                : 'filter brightness-0 opacity-60'
+            }`}
+          />
+        </div>
       )
     },
     {
       id: 'my-feedbacks',
       label: 'Masukan Saya',
       icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-        </svg>
+        <div className="w-5 h-5 flex-shrink-0 relative">
+          <Image 
+            src="/icon/smartdoc.png" 
+            alt="feedback" 
+            width={20}
+            height={20}
+            className={`transition-all duration-200 ${
+              activeTab === 'my-feedbacks' 
+                ? 'filter brightness-100 opacity-100' 
+                : 'filter brightness-0 opacity-60'
+            }`}
+          />
+        </div>
       )
     },
     {
       id: 'clusters',
       label: 'Lihat Cluster',
       icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
+        <div className="w-5 h-5 flex-shrink-0 relative">
+          <Image 
+            src="/icon/cluster.png" 
+            alt="Cluster" 
+            width={20}
+            height={20}
+            className={`transition-all duration-200 ${
+              activeTab === 'clusters' 
+                ? 'filter brightness-100 opacity-100'  
+                : 'filter brightness-0 opacity-60'
+            }`}
+          />
+        </div>
       )
     },
     {
       id: 'verify',
       label: 'Verifikasi Blockchain',
       icon: (
-        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-        </svg>
+        <div className="w-5 h-5 flex-shrink-0 relative">
+          <Image 
+            src="/icon/blockchain.png" 
+            alt="blockchain" 
+            width={20}
+            height={20}
+            className={`transition-all duration-200 ${
+              activeTab === 'verify' 
+                ? 'filter brightness-100 opacity-100'  
+                : 'filter brightness-0 opacity-60'
+            }`}
+          />
+        </div>
       )
     }
   ];
@@ -70,7 +119,7 @@ export default function Sidebar({
             className="object-contain flex-shrink-0"
           />
           {!sidebarMinimized && (
-            <span className="font-bold text-red-600">swaranusa</span>
+            <span className="font-bold text-red-600">SWARANUSA</span>
           )}
         </div>
       </div>

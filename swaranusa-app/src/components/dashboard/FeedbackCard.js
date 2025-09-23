@@ -20,9 +20,6 @@ export default function FeedbackCard({ feedback, formatDate }) {
         <h3 className="text-lg font-semibold text-gray-900 flex-1 mr-4">
           {feedback.title || "Sulit Mencari Pekerjaan"}
         </h3>
-        <span className="text-gray-500 text-sm whitespace-nowrap">
-          {feedback.created_at ? formatDate(feedback.created_at) : demoDate}
-        </span>
       </div>
       
       {/* Description */}
@@ -30,32 +27,43 @@ export default function FeedbackCard({ feedback, formatDate }) {
         {feedback.content || "Sulit mencari pekerjaan karena tempat usaha banyak yang tutup"}
       </p>
       
-      {/* Tags section */}
-      <div className="flex items-center space-x-2">
-        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-          {feedback.location || "Jalan Tamin"}
-        </span>
-        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-          {feedback.category || "Pemerintahan"}
-        </span>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          feedback.urgency === 'high' 
-            ? 'bg-red-100 text-red-800' 
-            : feedback.urgency === 'medium'
-            ? 'bg-yellow-100 text-yellow-800'
-            : 'bg-yellow-100 text-yellow-800'
-        }`}>
-          Prioritas: {
-            feedback.urgency === 'high' ? 'Tinggi' : 
-            feedback.urgency === 'medium' ? 'Sedang' : 
-            'Sedang'
-          }
-        </span>
-        {(feedback.blockchain_verified !== false) && (
-          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-            Terverifikasi Blockchain
+      {/* Tags + Date wrapper */}
+      <div className="flex justify-between items-start w-full">
+        {/* Left side: tags */}
+        <div className="flex items-center space-x-2">
+          <span className="text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
+            📍 {feedback.location || "Tidak Ada Lokasi"}
           </span>
-        )}
+          <span className="text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
+            🔖 {feedback.category || "Tidak Terkategori"}
+          </span>
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${
+              feedback.urgency === "high"
+                ? "bg-red-100 text-red-800"
+                : feedback.urgency === "medium"
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            Prioritas:{" "}
+            {feedback.urgency === "high"
+              ? "Tinggi"
+              : feedback.urgency === "medium"
+              ? "Sedang"
+              : "Sedang"}
+          </span>
+          {feedback.blockchain_verified !== false && (
+            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+              Terverifikasi Blockchain
+            </span>
+          )}
+        </div>
+
+        {/* Right side: date */}
+        <span className="text-gray-500 text-sm whitespace-nowrap">
+          {feedback.created_at ? formatDate(feedback.created_at) : demoDate}
+        </span>
       </div>
 
       {/* Additional details */}

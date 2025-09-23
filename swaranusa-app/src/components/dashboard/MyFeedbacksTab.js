@@ -61,7 +61,7 @@ export default function MyFeedbacksTab({ user, refreshTrigger }) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">Semua Masukan Saya</h2>
         <p className="text-gray-600">Lihat semua masukan yang telah Anda kirimkan dan status terkininya</p>

@@ -237,10 +237,10 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-8">
+    <div className="max-w-6xl mx-auto">
+      <div className="text-left mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">Kirim Masukan</h2>
-        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+        <p className="text-lg text-gray-600 max-w-3xl">
           Bagikan kekhawatiran Anda dan kami akan mengubahnya menjadi dokumen profesional. 
           Masukan Anda akan diproses oleh AI dan disimpan dengan aman di blockchain.
         </p>

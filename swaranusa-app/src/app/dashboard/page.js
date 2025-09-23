@@ -114,11 +114,11 @@ function DashboardContent() {
         return <ClustersTab user={user} onNavigateToSubmit={() => setActiveTab('submit-feedback')} />;
       default:
         return (
-          <div className="max-w-screen-2xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             {/* Page Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Warga</h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-lg">
                 Suara Anda penting. Kirim masukan, lacak pengajuan Anda, dan bantu membangun komunitas yang lebih baik.
               </p>
             </div>

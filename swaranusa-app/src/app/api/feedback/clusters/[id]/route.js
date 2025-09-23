@@ -3,10 +3,12 @@ import { neon } from '@neondatabase/serverless';
 
 const sql = neon(process.env.DATABASE_URL);
 
-export async function GET(request) {
+export async function GET(request, { params }) {
   try {
-    // Group feedbacks by category to create meaningful clusters
-    const clusters = await sql`
+    const { id } = await params;
+
+    // Get cluster details based on category
+    const clusterResult = await sql`
       SELECT 
         category as id,
         category as name,
@@ -43,21 +45,53 @@ export async function GET(request) {
           END
         ) as keywords
       FROM feedbacks
-      WHERE category IS NOT NULL
+      WHERE category = ${id}
       GROUP BY category
-      HAVING COUNT(*) > 0
-      ORDER BY COUNT(*) DESC, category ASC
+    `;
+
+    if (clusterResult.length === 0) {
+      return NextResponse.json(
+        { error: 'Cluster not found' },
+        { status: 404 }
+      );
+    }
+
+    const cluster = clusterResult[0];
+
+    // Get feedbacks in this category
+    const feedbacks = await sql`
+      SELECT 
+        f.id,
+        f.title,
+        f.content,
+        f.category,
+        f.location,
+        f.urgency,
+        f.status,
+        f.sentiment,
+        f.created_at as "createdAt",
+        f.updated_at as "updatedAt",
+        u.first_name as "userFirstName",
+        u.last_name as "userLastName",
+        u.email as "userEmail"
+      FROM feedbacks f
+      LEFT JOIN users u ON f.user_id = u.id
+      WHERE f.category = ${id}
+      ORDER BY f.created_at DESC
     `;
 
     return NextResponse.json({
       success: true,
-      clusters
+      cluster: {
+        ...cluster,
+        feedbacks
+      }
     });
 
   } catch (error) {
-    console.error('Clusters fetch error:', error);
+    console.error('Cluster detail fetch error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch clusters' },
+      { error: 'Failed to fetch cluster details' },
       { status: 500 }
     );
   }
