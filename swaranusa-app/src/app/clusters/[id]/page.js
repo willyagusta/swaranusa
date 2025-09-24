@@ -151,9 +151,9 @@ export default function ClusterDetailPage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-6 mb-6">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-blue-900 mb-1">Kategori</h3>
-                <p className="text-blue-700">{cluster.category}</p>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-purple-900 mb-1">Kategori</h3>
+                <p className="text-purple-700">{cluster.category}</p>
               </div>
               
               <div className="bg-purple-50 p-4 rounded-lg">
@@ -163,9 +163,9 @@ export default function ClusterDetailPage() {
                 </span>
               </div>
               
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-green-900 mb-1">Dibuat</h3>
-                <p className="text-green-700">{formatDate(cluster.createdAt)}</p>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-purple-900 mb-1">Dibuat</h3>
+                <p className="text-purple-700">{formatDate(cluster.createdAt)}</p>
               </div>
             </div>
 

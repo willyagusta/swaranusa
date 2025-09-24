@@ -57,7 +57,7 @@ export default function ClustersTab({ user, onNavigateToSubmit }) {
               <p className="text-gray-600 mb-4">{cluster.description}</p>
               
               <div className="mb-4">
-                <span className="inline-block bg-blue-50 text-blue-600 px-2 py-1 rounded text-sm font-medium mb-2">
+                <span className="inline-block bg-purple-50 text-purple-600 px-2 py-1 rounded text-sm font-medium mb-2">
                   {cluster.category}
                 </span>
               </div>
