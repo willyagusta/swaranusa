@@ -41,12 +41,12 @@ const safeJSONParse = (jsonString, fallback = null) => {
 // Status color helper
 const getStatusColor = (status) => {
   const statusColors = {
-    'belum_dilihat': 'bg-gray-100 text-gray-800',
-    'dilihat': 'bg-blue-100 text-blue-800',
-    'masuk_daftar_bahasan': 'bg-yellow-100 text-yellow-800',
-    'dirapatkan': 'bg-orange-100 text-orange-800',
+    'belum_dilihat': 'bg-purple-100 text-purple-800',
+    'dilihat': 'bg-purple-100 text-purple-800',
+    'masuk_daftar_bahasan': 'bg-purple-100 text-purple-800',
+    'dirapatkan': 'bg-purple-100 text-purple-800',
     'ditindak_lanjuti': 'bg-purple-100 text-purple-800',
-    'selesai': 'bg-green-100 text-green-800'
+    'selesai': 'bg-purple-100 text-purple-800'
   };
   return statusColors[status] || 'bg-gray-100 text-gray-800';
 };
@@ -607,16 +607,16 @@ function GovernmentContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             {[
-              { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-              { id: 'feedbacks', label: 'Feedback Warga', icon: '💬' },
-              { id: 'reports', label: 'Laporan', icon: '📄' }
+              { id: 'dashboard', label: 'Dashboard' },
+              { id: 'feedbacks', label: 'Feedback Warga' },
+              { id: 'reports', label: 'Laporan' }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-red-500 text-red-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -649,22 +649,22 @@ function GovernmentContent() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-lg font-semibold text-gray-700">Total Feedback</h3>
-                  <p className="text-3xl font-bold text-blue-600">{dashboardData.stats?.total_feedbacks || 0}</p>
+                  <p className="text-3xl font-bold text-purple-800">{dashboardData.stats?.total_feedbacks || 0}</p>
                   <p className="text-sm text-gray-500">30 hari terakhir</p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-lg font-semibold text-gray-700">Prioritas Tinggi</h3>
-                  <p className="text-3xl font-bold text-red-600">{dashboardData.stats?.high_urgency || 0}</p>
+                  <p className="text-3xl font-bold text-purple-800">{dashboardData.stats?.high_urgency || 0}</p>
                   <p className="text-sm text-gray-500">Perlu perhatian segera</p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-lg font-semibold text-gray-700">Terverifikasi</h3>
-                  <p className="text-3xl font-bold text-green-600">{dashboardData.stats?.verified_feedbacks || 0}</p>
+                  <p className="text-3xl font-bold text-purple-800">{dashboardData.stats?.verified_feedbacks || 0}</p>
                   <p className="text-sm text-gray-500">Terverifikasi blockchain</p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-lg font-semibold text-gray-700">Sentimen Negatif</h3>
-                  <p className="text-3xl font-bold text-orange-600">{dashboardData.stats?.negative_sentiment || 0}</p>
+                  <p className="text-3xl font-bold text-purple-800">{dashboardData.stats?.negative_sentiment || 0}</p>
                   <p className="text-sm text-gray-500">Ketidakpuasan warga</p>
                 </div>
               </div>
@@ -691,7 +691,7 @@ function GovernmentContent() {
                           <button
                             onClick={() => generateReport(item.category, item.kota, item.kabupaten, item.provinsi)}
                             disabled={generating}
-                            className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 disabled:opacity-50"
+                            className="bg-purple-700 text-white px-3 py-1 rounded text-sm hover:bg-purple-800 disabled:opacity-50"
                           >
                             {generating ? 'AI Sedang Membuat Laporan..(2-3 menit)' : 'Buat Laporan'}
                           </button>
@@ -822,13 +822,13 @@ function GovernmentContent() {
                           <div className="flex space-x-2">
                             <button
                               onClick={() => viewReport(report)}
-                              className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                              className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
                             >
                               Lihat Laporan
                             </button>
                             <button
                               onClick={() => downloadReportAsPDF(report)}
-                              className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                              className="bg-white border-red-600 border text-red-600 px-3 py-1 rounded text-sm hover:text-red-700 hover:border-red-700"
                             >
                               Download PDF
                             </button>
