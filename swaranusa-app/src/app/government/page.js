@@ -609,7 +609,8 @@ function GovernmentContent() {
             {[
               { id: 'dashboard', label: 'Dashboard' },
               { id: 'feedbacks', label: 'Feedback Warga' },
-              { id: 'reports', label: 'Laporan' }
+              { id: 'reports', label: 'Laporan' },
+              { id: 'government-stats', label: 'Statistik Pemerintah' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -864,6 +865,11 @@ function GovernmentContent() {
               )}
             </div>
           </div>
+        )}
+
+        {/* Government Statistics Tab */}
+        {activeTab === 'government-stats' && (
+          <GovernmentStatsTab user={user} />
         )}
       </div>
 

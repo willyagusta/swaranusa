@@ -11,6 +11,7 @@ import SubmitFeedbackTab from '@/components/dashboard/SubmitFeedbackTab';
 import MyFeedbacksTab from '@/components/dashboard/MyFeedbacksTab';
 import VerifyTab from '@/components/dashboard/VerifyTab';
 import ClustersTab from '@/components/dashboard/ClustersTab';
+import GovernmentStatsTab from '@/components/dashboard/GovernmentStatsTab';
 
 function DashboardContent() {
   const { user, loading, signOut } = useAuth();
@@ -112,6 +113,8 @@ function DashboardContent() {
         return <VerifyTab initialHash={verifyHash} />;
       case 'clusters':
         return <ClustersTab user={user} onNavigateToSubmit={() => setActiveTab('submit-feedback')} />;
+      case 'government-stats':
+        return <GovernmentStatsTab user={user} />;
       default:
         return (
           <div className="max-w-6xl mx-auto">

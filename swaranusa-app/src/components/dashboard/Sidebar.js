@@ -103,6 +103,25 @@ export default function Sidebar({
           />
         </div>
       )
+    },
+    {
+      id: 'government-stats',
+      label: 'Statistik Pemerintah',
+      icon: (
+        <div className="w-5 h-5 flex-shrink-0 relative">
+          <Image 
+            src="/icon/gov.png" 
+            alt="government-stats" 
+            width={20}
+            height={20}
+            className={`transition-all duration-200 ${
+              activeTab === 'government-stats' 
+                ? 'filter brightness-100 opacity-100'  
+                : 'filter brightness-0 opacity-60'
+            }`}
+          />
+        </div>
+      )
     }
   ];
 

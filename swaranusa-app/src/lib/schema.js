@@ -9,6 +9,7 @@ export const users = pgTable('users', {
   role: text('role').default('citizen'), // citizen, government, admin
   department: text('department'), // For government users
   position: text('position'), // For government users
+  politicalParty: text('political_party'), // For government users - political party affiliation
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
