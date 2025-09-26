@@ -158,9 +158,9 @@ export default function GovernmentStatsTab({ user }) {
           <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-lg">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Status Laporan</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">{statsData.overallStats.total_reports_read || 0}</p>
-                <p className="text-sm text-blue-700">Dilihat</p>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-2xl font-bold purple-blue-600">{statsData.overallStats.total_reports_read || 0}</p>
+                <p className="text-sm purple-blue-700">Dilihat</p>
               </div>
               <div className="text-center p-4 bg-yellow-50 rounded-lg">
                 <p className="text-2xl font-bold text-yellow-600">{statsData.overallStats.total_reports_in_discussion || 0}</p>
@@ -290,7 +290,7 @@ export default function GovernmentStatsTab({ user }) {
                         <p className="text-sm text-gray-600">{official.position}</p>
                         <p className="text-sm text-gray-500">{official.department}</p>
                         {official.political_party && (
-                          <p className="text-sm text-blue-600 font-medium">{official.political_party}</p>
+                          <p className="text-sm text-red-600 font-medium">{official.political_party}</p>
                         )}
                       </div>
                     </div>
@@ -301,21 +301,21 @@ export default function GovernmentStatsTab({ user }) {
                   </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-center">
-                    <div className="bg-blue-50 p-3 rounded">
-                      <p className="text-lg font-bold text-blue-600">{official.reports_read || 0}</p>
-                      <p className="text-xs text-blue-700">Dibaca</p>
+                    <div className="bg-purple-50 p-3 rounded">
+                      <p className="text-lg font-bold text-purple-600">{official.reports_read || 0}</p>
+                      <p className="text-xs text-purple-700">Dibaca</p>
                     </div>
-                    <div className="bg-yellow-50 p-3 rounded">
-                      <p className="text-lg font-bold text-yellow-600">{official.reports_in_discussion || 0}</p>
-                      <p className="text-xs text-yellow-700">Pembahasan</p>
+                    <div className="bg-purple-50 p-3 rounded">
+                      <p className="text-lg font-bold text-purple-600">{official.reports_in_discussion || 0}</p>
+                      <p className="text-xs text-purple-700">Pembahasan</p>
                     </div>
                     <div className="bg-purple-50 p-3 rounded">
                       <p className="text-lg font-bold text-purple-600">{official.reports_in_meeting || 0}</p>
                       <p className="text-xs text-purple-700">Rapat</p>
                     </div>
-                    <div className="bg-orange-50 p-3 rounded">
-                      <p className="text-lg font-bold text-orange-600">{official.reports_followed_up || 0}</p>
-                      <p className="text-xs text-orange-700">Tindak Lanjut</p>
+                    <div className="bg-purple-50 p-3 rounded">
+                      <p className="text-lg font-bold text-purple-600">{official.reports_followed_up || 0}</p>
+                      <p className="text-xs text-purple-700">Tindak Lanjut</p>
                     </div>
                     <div className="bg-green-50 p-3 rounded">
                       <p className="text-lg font-bold text-green-600">{official.reports_completed || 0}</p>
