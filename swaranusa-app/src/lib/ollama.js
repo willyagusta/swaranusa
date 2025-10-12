@@ -6,7 +6,7 @@ const ollama = new Ollama({
 
 export class FeedbackClusteringService {
   constructor() {
-    this.model = 'llama3.2';
+    this.model = 'llama3.2:latest';
   }
 
   async processFeedback(feedbackText, locationData = {}) {
@@ -14,39 +14,36 @@ export class FeedbackClusteringService {
       const { provinsi, kota, kabupaten, location } = locationData;
       
       const prompt = `
-        Analyze this Indonesian citizen feedback/complaint and extract the following information in JSON format:
-        
-        Feedback: "${feedbackText}"
-        Location: ${provinsi}${kota ? `, ${kota}` : ''}${kabupaten ? `, ${kabupaten}` : ''}${location ? `, ${location}` : ''}
-        
-        IMPORTANT: Categorize based on the MAIN PROBLEM being complained about, not who handles it.
-        All text outputs must be in Indonesian language.
-        
-        Provide response in this exact format:
-        {
-          "cleanedContent": "Professional version without profanity or excessive emotion, in Indonesian",
-          "category": "CHOOSE ONE from: infrastruktur, kesehatan, pendidikan, lingkungan, transportasi, keamanan, ekonomi, sosial, pemerintahan, teknologi",
-          "urgency": "CHOOSE ONE from: low, medium, high",
-          "sentiment": "CHOOSE ONE from: positive, negative, neutral",
-          "tags": ["array", "of", "relevant", "keywords", "in", "Indonesian"],
-          "locationRelevance": "CHOOSE ONE from: high, medium, low",
-          "suggestedDepartment": "Which government department should handle this, in Indonesian"
-        }
+      Analyze this Indonesian feedback. Respond ONLY in JSON format:
+      
+      Feedback: "${feedbackText}"
+      Location: ${provinsi}, ${kota}, ${kabupaten}${location ? `, ${location}` : ''}
+      
+      {
+        "cleanedContent": "Professional version in Indonesian",
+        "category": "infrastruktur|kesehatan|pendidikan|lingkungan|transportasi|keamanan|ekonomi|sosial|pemerintahan|teknologi",
+        "urgency": "low|medium|high",
+        "sentiment": "positive|negative|neutral",
+        "tags": ["keyword1", "keyword2"],
+        "locationRelevance": "high|medium|low",
+        "suggestedDepartment": "Department name in Indonesian"
+      }
 
-        CATEGORIZATION GUIDE:
-        - infrastruktur: damaged roads, bridges, drainage, clean water, electricity
-        - kesehatan: hospitals, clinics, medicines, doctors, medical facilities
-        - pendidikan: schools, teachers, learning facilities, curriculum, scholarships
-        - lingkungan: garbage, pollution, cleanliness, parks, environmental damage
-        - transportasi: public transport, traffic, parking, transportation facilities
-        - keamanan: crime, safety, security, police services
-        - ekonomi: business permits, markets, economic development, unemployment
-        - sosial: social services, community issues, social welfare
-        - pemerintahan: government services, bureaucracy, administrative issues, corruption
-        - teknologi: digital services, internet, technology infrastructure
-
-        Consider the location context when determining category and urgency.
-        Respond ONLY with valid JSON, no additional text.
+      Be aware of the terms mentioned in the feedback and categorize the feedback accordingly. EXAMPLE: "kurang sekolah sangat sulit mengakses pendidikan formal" → category should be "pendidikan"
+      
+    Categories:
+    - infrastruktur: roads, bridges, water, electricity, jalan, jembatan, air bersih, listrik
+    - kesehatan: hospitals, medical facilities, rumah sakit, fasilitas kesehatan, dokter, obat
+    - pendidikan: schools, education, sekolah, pendidikan, guru, fasilitas belajar, akses sekolah
+    - lingkungan: garbage, pollution, cleanliness, sampah, polusi, kebersihan, taman
+    - transportasi: transport, traffic, transportasi, lalu lintas, parkir, angkutan umum
+    - keamanan: security, safety, keamanan, keselamatan, polisi, kejahatan
+    - ekonomi: business, economy, bisnis, ekonomi, pasar, pengangguran, kesejahteraan
+    - sosial: social services, layanan sosial, bantuan sosial, program masyarakat
+    - pemerintahan: government services, bureaucracy, layanan pemerintah, birokrasi, korupsi
+    - teknologi: digital services, tech, layanan digital, internet, teknologi
+      
+      Respond ONLY with JSON.
       `;
 
       const response = await ollama.chat({

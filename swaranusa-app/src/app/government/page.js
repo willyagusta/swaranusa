@@ -372,14 +372,11 @@ function GovernmentContent() {
 
       // Add section header with smart page breaking
       const addSectionHeader = (title, content, fontSize = 14) => {
-        // Calculate if we can fit title + some content on current page
         const titleHeight = fontSize * 0.6;
         const contentPreview = stripHTML(content).substring(0, 200); // First 200 chars
         const contentLines = pdf.splitTextToSize(contentPreview, pageWidth - 2 * margin);
         const minContentHeight = Math.min(contentLines.length * 11 * 0.6, 50); // At least some content
         const requiredSpace = titleHeight + minContentHeight + 10;
-        
-        // If we can't fit title + meaningful content, move to next page
         if (yPosition + requiredSpace > pageHeight - footerHeight) {
           pdf.addPage();
           yPosition = margin;

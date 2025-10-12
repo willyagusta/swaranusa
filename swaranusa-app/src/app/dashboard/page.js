@@ -21,6 +21,7 @@ function DashboardContent() {
   const [feedbackError, setFeedbackError] = useState('');
   const [loadingState, setLoadingState] = useState('');
   const [sidebarMinimized, setSidebarMinimized] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [verifyHash, setVerifyHash] = useState('');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -33,6 +34,10 @@ function DashboardContent() {
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
+  };
+
+  const handleMobileMenuToggle = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
   const handleFeedbackSubmitted = () => {
@@ -119,30 +124,30 @@ function DashboardContent() {
         return (
           <div className="max-w-6xl mx-auto">
             {/* Page Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Warga</h1>
-              <p className="text-gray-600 text-lg">
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Dashboard Warga</h1>
+              <p className="text-gray-600 text-base sm:text-lg">
                 Suara Anda penting. Kirim masukan, lacak pengajuan Anda, dan bantu membangun komunitas yang lebih baik.
               </p>
             </div>
 
             {/* Search Bar */}
-            <div className="mb-8">
+            <div className="mb-6 sm:mb-8">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Cari Masukan"
-                  className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full sm:max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base"
                 />
               </div>
             </div>
 
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">Aktivitas Terkini</h2>
+            <div className="mb-6 sm:mb-8">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Aktivitas Terkini</h2>
             </div>
 
             {/* Feedback Cards */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {loadingFeedbacks ? (
                 <div className="text-center py-12">
                   <div className="w-12 h-12 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin mx-auto mb-4"></div>
@@ -196,20 +201,26 @@ function DashboardContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
-      <TopNavigation user={user} onSignOut={handleSignOut} />
+      <TopNavigation 
+        user={user} 
+        onSignOut={handleSignOut} 
+        onMobileMenuToggle={handleMobileMenuToggle}
+      />
 
-      <div className="flex">
+      <div className="flex relative">
         {/* Sidebar */}
         <Sidebar 
           sidebarMinimized={sidebarMinimized}
           setSidebarMinimized={setSidebarMinimized}
           activeTab={activeTab}
           onTabChange={handleTabChange}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
         />
 
         {/* Main Content */}
-        <div className="flex-1">
-          <div className="px-4 sm:px-6 lg:px-8 xl:px-12 py-8">
+        <div className="flex-1 min-w-0">
+          <div className="px-4 sm:px-6 lg:px-8 xl:px-12 py-4 sm:py-8">
             {renderTabContent()}
           </div>
         </div>

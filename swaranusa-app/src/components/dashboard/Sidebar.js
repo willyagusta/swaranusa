@@ -6,7 +6,9 @@ export default function Sidebar({
   sidebarMinimized, 
   setSidebarMinimized, 
   activeTab, 
-  onTabChange 
+  onTabChange,
+  mobileMenuOpen,
+  setMobileMenuOpen 
 }) {
   const menuItems = [
     {
@@ -110,7 +112,7 @@ export default function Sidebar({
       icon: (
         <div className="w-5 h-5 flex-shrink-0 relative">
           <Image 
-            src="/icon/gov.png" 
+            src="/icon/people.png" 
             alt="government-stats" 
             width={20}
             height={20}
@@ -125,8 +127,31 @@ export default function Sidebar({
     }
   ];
 
+  const handleMenuItemClick = (itemId) => {
+    onTabChange(itemId);
+    // Close mobile menu when item is selected
+    if (setMobileMenuOpen) {
+      setMobileMenuOpen(false);
+    }
+  };
+
   return (
-    <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${sidebarMinimized ? 'w-16' : 'w-64'} min-h-screen`}>
+    <>
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen && setMobileMenuOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`
+        bg-white border-r border-gray-200 transition-all duration-300 min-h-screen
+        ${sidebarMinimized ? 'w-16' : 'w-64'}
+        ${mobileMenuOpen ? 'fixed inset-y-0 left-0 z-50' : 'hidden lg:block'}
+        lg:relative lg:translate-x-0
+      `}>
       {/* Logo Section */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center space-x-3">
@@ -143,8 +168,8 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Sidebar Toggle */}
-      <div className="p-4">
+      {/* Sidebar Toggle - Hidden on mobile */}
+      <div className="p-4 hidden lg:block">
         <button 
           onClick={() => setSidebarMinimized(!sidebarMinimized)}
           className="w-full flex items-center justify-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -160,7 +185,7 @@ export default function Sidebar({
         {menuItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => onTabChange(item.id)}
+            onClick={() => handleMenuItemClick(item.id)}
             className={`w-full flex items-center space-x-3 p-3 rounded-lg font-medium transition-colors ${
               activeTab === item.id
                 ? 'text-red-600 bg-red-50'
@@ -168,10 +193,11 @@ export default function Sidebar({
             }`}
           >
             {item.icon}
-            {!sidebarMinimized && <span>{item.label}</span>}
+            {!sidebarMinimized && <span className="text-sm lg:text-base">{item.label}</span>}
           </button>
         ))}
       </nav>
-    </div>
+      </div>
+    </>
   );
 }

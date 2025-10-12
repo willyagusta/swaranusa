@@ -130,7 +130,7 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
       await new Promise(resolve => setTimeout(resolve, 800));
 
       // Step 2: Processing with AI
-      setLoadingState('Memproses dengan AI (sekitar 1-2 menit)...');
+      setLoadingState('Memproses dengan AI...');
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const response = await fetch('/api/feedback/submit', {

@@ -32,11 +32,12 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    // Process feedback with Ollama including location data
+    // OPTIMIZATION 1: Process feedback with Ollama
     const locationData = { provinsi, kota, kabupaten, location };
     const processed = await clusteringService.processFeedback(content, locationData);
 
-    // Get existing feedbacks for clustering (same province and category)
+    // OPTIMIZATION 2: Fetch existing feedbacks immediately after we have category
+    // Don't wait for anything else
     const existingFeedbacks = await sql`
       SELECT id, content, category, tags, cluster_id as "clusterId", provinsi, kota, kabupaten
       FROM feedbacks 
@@ -48,8 +49,8 @@ export async function POST(request) {
 
     let clusterId = null;
 
+    // OPTIMIZATION 3: Clustering logic (sequential, but necessary)
     if (existingFeedbacks.length > 0) {
-      // Find similar feedbacks
       const similarity = await clusteringService.findSimilarFeedbacks(
         { 
           content: processed.cleanedContent, 
@@ -63,7 +64,6 @@ export async function POST(request) {
       if (similarity.suggestedClusterId && !similarity.shouldCreateNewCluster) {
         clusterId = similarity.suggestedClusterId;
       } else if (similarity.shouldCreateNewCluster) {
-        // Create new cluster
         const clusterInfo = await clusteringService.generateClusterName([
           { 
             content: processed.cleanedContent, 
@@ -86,7 +86,6 @@ export async function POST(request) {
         clusterId = newCluster.id;
       }
     } else {
-      // First feedback in this category and province - create new cluster
       const clusterInfo = await clusteringService.generateClusterName([
         { 
           content: processed.cleanedContent, 
@@ -109,116 +108,108 @@ export async function POST(request) {
       clusterId = newCluster.id;
     }
 
-    // Insert feedback with explicit status set to 'belum_dilihat'
-    const [newFeedback] = await sql`
-      INSERT INTO feedbacks (
-        user_id, title, content, original_content, processed_content,
-        category, cluster_id, urgency, 
-        provinsi, kota, kabupaten, location,
-        tags, sentiment, status
-      )
-      VALUES (
-        ${decoded.userId},
-        ${title},
-        ${processed.cleanedContent},
-        ${content},
-        ${processed.cleanedContent},
-        ${processed.category},
-        ${clusterId},
-        ${processed.urgency},
-        ${provinsi},
-        ${kota},
-        ${kabupaten},
-        ${location || null},
-        ${JSON.stringify(processed.tags)},
-        ${processed.sentiment},
-        'belum_dilihat'
-      )
-      RETURNING id, title, content, category, urgency, sentiment, provinsi, kota, kabupaten, location, status, created_at
-    `;
-
-    // Update cluster feedback count
-    if (clusterId) {
-      await sql`
+    // OPTIMIZATION 4: Insert feedback and update cluster in parallel
+    const [newFeedback] = await Promise.all([
+      sql`
+        INSERT INTO feedbacks (
+          user_id, title, content, original_content, processed_content,
+          category, cluster_id, urgency, 
+          provinsi, kota, kabupaten, location,
+          tags, sentiment, status
+        )
+        VALUES (
+          ${decoded.userId},
+          ${title},
+          ${processed.cleanedContent},
+          ${content},
+          ${processed.cleanedContent},
+          ${processed.category},
+          ${clusterId},
+          ${processed.urgency},
+          ${provinsi},
+          ${kota},
+          ${kabupaten},
+          ${location || null},
+          ${JSON.stringify(processed.tags)},
+          ${processed.sentiment},
+          'belum_dilihat'
+        )
+        RETURNING id, title, content, category, urgency, sentiment, provinsi, kota, kabupaten, location, status, created_at
+      `,
+      // Update cluster count in parallel
+      clusterId ? sql`
         UPDATE clusters 
         SET feedback_count = feedback_count + 1,
             updated_at = NOW()
         WHERE id = ${clusterId}
-      `;
-    }
+      ` : Promise.resolve()
+    ]).then(results => results[0]);
 
-    // BLOCKCHAIN VERIFICATION - This happens in background
-    let blockchainResult = null;
-    try {
-      // Create blockchain verification asynchronously
-      const feedbackForBlockchain = {
-        id: newFeedback.id,
-        userId: decoded.userId,
-        title: newFeedback.title,
-        content: newFeedback.content,
-        location: `${provinsi}, ${kota}, ${kabupaten}${location ? `, ${location}` : ''}`,
-        createdAt: newFeedback.created_at
-      };
+    // OPTIMIZATION 5: Start blockchain verification but DON'T wait for it
+    // Return response immediately after feedback is saved
+    const feedbackForBlockchain = {
+      id: newFeedback.id,
+      userId: decoded.userId,
+      title: newFeedback.title,
+      content: newFeedback.content,
+      location: `${provinsi}, ${kota}, ${kabupaten}${location ? `, ${location}` : ''}`,
+      createdAt: newFeedback.created_at
+    };
 
-      blockchainResult = await blockchainService.verifyFeedback(feedbackForBlockchain);
-      
-      // Update feedback with blockchain hash
-      await sql`
-        UPDATE feedbacks 
-        SET blockchain_hash = ${blockchainResult.transactionHash},
-            blockchain_verified = true,
-            verification_data = ${JSON.stringify({
-              blockNumber: blockchainResult.blockNumber,
-              blockTimestamp: blockchainResult.blockTimestamp,
-              gasUsed: blockchainResult.gasUsed,
-              networkName: blockchainResult.networkName,
-              feedbackHash: blockchainResult.feedbackHash
-            })}
-        WHERE id = ${newFeedback.id}
-      `;
+    // Fire blockchain verification without awaiting (async)
+    blockchainService.verifyFeedback(feedbackForBlockchain)
+      .then(async (blockchainResult) => {
+        await sql`
+          UPDATE feedbacks 
+          SET blockchain_hash = ${blockchainResult.transactionHash},
+              blockchain_verified = true,
+              verification_data = ${JSON.stringify({
+                blockNumber: blockchainResult.blockNumber,
+                blockTimestamp: blockchainResult.blockTimestamp,
+                gasUsed: blockchainResult.gasUsed,
+                networkName: blockchainResult.networkName,
+                feedbackHash: blockchainResult.feedbackHash
+              })}
+          WHERE id = ${newFeedback.id}
+        `;
 
-      // Log blockchain verification
-      await sql`
-        INSERT INTO blockchain_verifications (
-          feedback_id, transaction_hash, block_number, block_timestamp,
-          gas_used, network_name, verification_status
-        )
-        VALUES (
-          ${newFeedback.id},
-          ${blockchainResult.transactionHash},
-          ${blockchainResult.blockNumber},
-          ${blockchainResult.blockTimestamp},
-          ${blockchainResult.gasUsed},
-          ${blockchainResult.networkName},
-          'confirmed'
-        )
-      `;
+        await sql`
+          INSERT INTO blockchain_verifications (
+            feedback_id, transaction_hash, block_number, block_timestamp,
+            gas_used, network_name, verification_status
+          )
+          VALUES (
+            ${newFeedback.id},
+            ${blockchainResult.transactionHash},
+            ${blockchainResult.blockNumber},
+            ${blockchainResult.blockTimestamp},
+            ${blockchainResult.gasUsed},
+            ${blockchainResult.networkName},
+            'confirmed'
+          )
+        `;
+      })
+      .catch(async (blockchainError) => {
+        console.error('Blockchain verification failed:', blockchainError);
+        await sql`
+          UPDATE feedbacks 
+          SET blockchain_verified = false,
+              verification_data = ${JSON.stringify({ error: blockchainError.message })}
+          WHERE id = ${newFeedback.id}
+        `;
+      });
 
-    } catch (blockchainError) {
-      console.error('Blockchain verification failed:', blockchainError);
-      // Don't fail the entire request if blockchain fails
-      // Log the error for later retry
-      await sql`
-        UPDATE feedbacks 
-        SET blockchain_verified = false,
-            verification_data = ${JSON.stringify({ error: blockchainError.message })}
-        WHERE id = ${newFeedback.id}
-      `;
-    }
-
+    // RETURN IMMEDIATELY
     return NextResponse.json({
       success: true,
       feedback: newFeedback,
       clusterId,
       processed,
-      blockchain: blockchainResult ? {
-        verified: true,
-        transactionHash: blockchainResult.transactionHash,
-        verificationUrl: blockchainService.generateVerificationUrl(
-          blockchainResult.transactionHash, 
-          blockchainResult.networkName
-        )
-      } : { verified: false, error: 'Blockchain verification pending' }
+      blockchain: { 
+        verified: false, 
+        status: 'processing',
+        message: 'Blockchain verification in progress'
+      }
     });
 
   } catch (error) {
