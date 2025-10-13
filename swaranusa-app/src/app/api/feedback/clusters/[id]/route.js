@@ -28,12 +28,10 @@ export async function GET(request, { params }) {
         END as description,
         category,
         COUNT(*) as "feedbackCount",
-        AVG(CASE 
-          WHEN sentiment = 'positive' THEN 1.0
-          WHEN sentiment = 'neutral' THEN 0.5
-          WHEN sentiment = 'negative' THEN 0.0
-          ELSE 0.5
-        END) as "avgSentiment",
+        -- Count each sentiment type
+        SUM(CASE WHEN sentiment = 'positive' THEN 1 ELSE 0 END) as "positiveCount",
+        SUM(CASE WHEN sentiment = 'neutral' THEN 1 ELSE 0 END) as "neutralCount",
+        SUM(CASE WHEN sentiment = 'negative' THEN 1 ELSE 0 END) as "negativeCount",
         MIN(created_at) as "createdAt",
         MAX(updated_at) as "updatedAt",
         ARRAY_AGG(DISTINCT 
@@ -56,9 +54,35 @@ export async function GET(request, { params }) {
       );
     }
 
-    const cluster = clusterResult[0];
 
-    // Get feedbacks in this category
+    // Calculate majority sentiment
+    const cluster = clusterResult[0];
+    const { positiveCount, neutralCount, negativeCount, feedbackCount } = cluster;
+
+    // Find the dominant sentiment
+    let dominantSentiment = 'neutral';
+    let dominantCount = neutralCount || 0;
+    let dominantPercentage = 0;
+
+    if ((positiveCount || 0) > dominantCount) {
+      dominantSentiment = 'positive';
+      dominantCount = positiveCount;
+    }
+    if ((negativeCount || 0) > dominantCount) {
+      dominantSentiment = 'negative';
+      dominantCount = negativeCount;
+    }
+
+    dominantPercentage = feedbackCount > 0 ? (dominantCount / feedbackCount) : 0;
+
+    // Add sentiment info to cluster
+    cluster.avgSentiment = dominantPercentage;
+    cluster.avgSentimentLabel = dominantSentiment;
+    cluster.sentimentCounts = {
+      positive: positiveCount || 0,
+      neutral: neutralCount || 0,
+      negative: negativeCount || 0
+    };    
     const feedbacks = await sql`
       SELECT 
         f.id,

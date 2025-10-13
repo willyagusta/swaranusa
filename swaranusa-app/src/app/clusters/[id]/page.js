@@ -47,6 +47,24 @@ export default function ClusterDetailPage() {
     return 'Negatif';
   };
 
+  const getIndividualSentimentColor = (sentiment) => {
+    switch (sentiment) {
+      case 'positive': return 'text-green-600 bg-green-50';
+      case 'neutral': return 'text-yellow-600 bg-yellow-50';
+      case 'negative': return 'text-red-600 bg-red-50';
+      default: return 'text-gray-600 bg-gray-50';
+    }
+  };
+
+  const getIndividualSentimentLabel = (sentiment) => {
+    switch (sentiment) {
+      case 'positive': return 'Positif';
+      case 'neutral': return 'Netral';
+      case 'negative': return 'Negatif';
+      default: return sentiment;
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return 'text-yellow-600 bg-yellow-50';
@@ -64,6 +82,16 @@ export default function ClusterDetailPage() {
       case 'resolved': return 'Selesai';
       case 'rejected': return 'Ditolak';
       default: return status;
+    }
+  };
+
+  const convertSentimentToNumber = (sentiment) => {
+    if (typeof sentiment === 'number') return sentiment;
+    switch (sentiment) {
+      case 'positive': return 1.0;
+      case 'neutral': return 0.5;
+      case 'negative': return 0.0;
+      default: return 0.5;
     }
   };
 
@@ -158,8 +186,11 @@ export default function ClusterDetailPage() {
               
               <div className="bg-purple-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-purple-900 mb-1">Sentimen Rata-rata</h3>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSentimentColor(cluster.avgSentiment)}`}>
-                  {getSentimentLabel(cluster.avgSentiment)} ({(cluster.avgSentiment * 100).toFixed(1)}%)
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSentimentColor(
+                  cluster.avgSentimentLabel === 'positif' ? 1.0 : 
+                  cluster.avgSentimentLabel === 'negatif' ? 0.0 : 0.5
+                )}`}>
+                  {cluster.avgSentimentLabel}
                 </span>
               </div>
               
@@ -201,8 +232,8 @@ export default function ClusterDetailPage() {
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(feedback.status)}`}>
                         {getStatusLabel(feedback.status)}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSentimentColor(feedback.sentiment)}`}>
-                        {getSentimentLabel(feedback.sentiment)}
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getIndividualSentimentColor(feedback.sentiment)}`}>
+                        {getIndividualSentimentLabel(feedback.sentiment)}
                       </span>
                     </div>
                   </div>
