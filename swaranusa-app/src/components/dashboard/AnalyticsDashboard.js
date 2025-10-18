@@ -126,7 +126,6 @@ export default function AnalyticsDashboard({ user }) {
       { name: 'Negatif', value: parseInt(stats.negative_sentiment || 0), color: SENTIMENT_COLORS.negative }
     ];
 
-    // Use real location data from API
     const locationStats = dashboardData.locationStats || [];
     const provinceData = locationStats.map(loc => ({
       province: loc.location,
@@ -137,7 +136,7 @@ export default function AnalyticsDashboard({ user }) {
     // Generate trend data based on filter range
     const filterInfo = dashboardData.filterInfo || {};
     const days = filterInfo.days || 30;
-    const numPoints = Math.min(days, 7); // Show max 7 data points on chart
+    const numPoints = Math.min(days, 7);
     
     const today = new Date();
     const trendData = [];
