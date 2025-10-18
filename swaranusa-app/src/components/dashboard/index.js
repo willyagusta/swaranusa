@@ -5,3 +5,5 @@ export { default as SubmitFeedbackTab } from './SubmitFeedbackTab';
 export { default as MyFeedbacksTab } from './MyFeedbacksTab';
 export { default as VerifyTab } from './VerifyTab';
 export { default as ClustersTab } from './ClustersTab';
+export { default as AnalyticsDashboard } from './AnalyticsDashboard';
+export { default as IndonesiaMap } from './IndonesiaMap';

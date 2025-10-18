@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getProvinces, getCitiesAndRegencies } from '@/data/indonesia-locations';
+import { getProvinces, getCitiesAndRegencies, getRegenciesForCity } from '@/data/indonesia-locations';
 
 export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
   const [formData, setFormData] = useState({
@@ -43,6 +43,21 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
       setAvailableRegencies([]);
     }
   }, [formData.provinsi]);
+
+  // Update available cities/regencies when kota changes
+  useEffect(() => {
+    if (formData.kota && formData.provinsi) {
+      // Get regencies specific to the selected city
+      const cityRegencies = getRegenciesForCity(formData.provinsi, formData.kota);
+      setAvailableRegencies(cityRegencies);
+      // Reset kabupaten when kota changes
+      setFormData(prev => ({ ...prev, kabupaten: '' }));
+    } else if (formData.provinsi && !formData.kota) {
+      // Show all standalone regencies when no city is selected
+      const { regencies } = getCitiesAndRegencies(formData.provinsi);
+      setAvailableRegencies(regencies);
+    }
+  }, [formData.kota, formData.provinsi]);
 
   // Debounced AI suggestions
   const debounce = (func, wait) => {

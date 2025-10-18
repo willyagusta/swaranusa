@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import FeedbackStatusManager from '@/components/FeedbackStatusManager';
+import AnalyticsDashboard from '@/components/dashboard/AnalyticsDashboard';
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -722,105 +723,7 @@ function GovernmentContent() {
 
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
-          <>
-            {/* Statistics Cards */}
-            {dashboardData && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold text-gray-700">Total Feedback</h3>
-                  <p className="text-3xl font-bold text-purple-800">{dashboardData.stats?.total_feedbacks || 0}</p>
-                  <p className="text-sm text-gray-500">30 hari terakhir</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold text-gray-700">Prioritas Tinggi</h3>
-                  <p className="text-3xl font-bold text-purple-800">{dashboardData.stats?.high_urgency || 0}</p>
-                  <p className="text-sm text-gray-500">Perlu perhatian segera</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold text-gray-700">Terverifikasi</h3>
-                  <p className="text-3xl font-bold text-purple-800">{dashboardData.stats?.verified_feedbacks || 0}</p>
-                  <p className="text-sm text-gray-500">Terverifikasi blockchain</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold text-gray-700">Sentimen Negatif</h3>
-                  <p className="text-3xl font-bold text-purple-800">{dashboardData.stats?.negative_sentiment || 0}</p>
-                  <p className="text-sm text-gray-500">Ketidakpuasan warga</p>
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-              {/* Available Reports */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b">
-                  <h2 className="text-xl font-bold">Buat Laporan Baru</h2>
-                  <p className="text-gray-600">Kombinasi kategori-lokasi yang tersedia</p>
-                </div>
-                <div className="p-6">
-                  {dashboardData?.availableReports?.length > 0 ? (
-                    <div className="space-y-3">
-                      {dashboardData.availableReports.slice(0, 10).map((item, index) => (
-                        <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                          <div>
-                            <p className="font-semibold">{item.category} - {item.location_display}</p>
-                            <p className="text-sm text-gray-600">
-                              {item.feedback_count} feedback, {item.high_priority_count} prioritas tinggi
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => generateReport(item.category, item.kota, item.kabupaten, item.provinsi)}
-                            disabled={generating}
-                            className="bg-purple-700 text-white px-3 py-1 rounded text-sm hover:bg-purple-800 disabled:opacity-50"
-                          >
-                            {generating ? 'AI Sedang Membuat Laporan..(2-3 menit)' : 'Buat Laporan'}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">Tidak ada data untuk membuat laporan</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Recent High Priority Issues */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b">
-                  <h2 className="text-xl font-bold">Masalah Prioritas Tinggi</h2>
-                  <p className="text-gray-600">Keluhan warga yang mendesak</p>
-                </div>
-                <div className="p-6">
-                  {dashboardData?.recentHighPriority?.length > 0 ? (
-                    <div className="space-y-3">
-                      {dashboardData.recentHighPriority.map((feedback) => (
-                        <div key={feedback.id} className="p-3 bg-red-50 rounded border-l-4 border-red-500">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <p className="font-semibold">{feedback.title}</p>
-                              <p className="text-sm text-gray-600">
-                                {feedback.category} - {feedback.location}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                Oleh {feedback.first_name} {feedback.last_name} - {formatDate(feedback.created_at)}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => viewFeedback(feedback.id)}
-                              className="ml-2 text-blue-600 hover:text-blue-800 text-sm underline"
-                            >
-                              Lihat
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">Tidak ada masalah prioritas tinggi</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </>
+          <AnalyticsDashboard user={user} />
         )}
 
         {/* Feedbacks Tab */}

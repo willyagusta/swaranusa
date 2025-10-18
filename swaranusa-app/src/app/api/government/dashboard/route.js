@@ -26,6 +26,49 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Access denied. Government access required.' }, { status: 403 });
     }
 
+    // Get date filter parameters
+    const { searchParams } = new URL(request.url);
+    const filter = searchParams.get('filter') || '30days';
+    const customStart = searchParams.get('startDate');
+    const customEnd = searchParams.get('endDate');
+
+    // Calculate date range based on filter
+    let dateCondition = `created_at >= NOW() - INTERVAL '30 days'`;
+    let days = 30;
+    
+    if (filter === 'custom' && customStart && customEnd) {
+      dateCondition = `created_at >= '${customStart}'::date AND created_at <= '${customEnd}'::date + INTERVAL '1 day'`;
+      const start = new Date(customStart);
+      const end = new Date(customEnd);
+      days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    } else {
+      switch (filter) {
+        case '7days':
+          dateCondition = `created_at >= NOW() - INTERVAL '7 days'`;
+          days = 7;
+          break;
+        case '90days':
+          dateCondition = `created_at >= NOW() - INTERVAL '90 days'`;
+          days = 90;
+          break;
+        case '6months':
+          dateCondition = `created_at >= NOW() - INTERVAL '6 months'`;
+          days = 180;
+          break;
+        case '1year':
+          dateCondition = `created_at >= NOW() - INTERVAL '1 year'`;
+          days = 365;
+          break;
+        case 'lifetime':
+          dateCondition = `1=1`; // No date filter
+          days = null;
+          break;
+        default: // 30days
+          dateCondition = `created_at >= NOW() - INTERVAL '30 days'`;
+          days = 30;
+      }
+    }
+
     // Get dashboard statistics
     const [stats] = await sql`
       SELECT 
@@ -38,7 +81,7 @@ export async function GET(request) {
         COUNT(CASE WHEN sentiment = 'neutral' THEN 1 END) as neutral_sentiment,
         COUNT(CASE WHEN blockchain_verified = true THEN 1 END) as verified_feedbacks
       FROM feedbacks
-      WHERE created_at >= NOW() - INTERVAL '30 days'
+      WHERE ${sql.unsafe(dateCondition)}
     `;
 
     // Get feedback by category
@@ -48,24 +91,35 @@ export async function GET(request) {
         COUNT(*) as count,
         COUNT(CASE WHEN urgency = 'high' THEN 1 END) as high_urgency_count
       FROM feedbacks
-      WHERE created_at >= NOW() - INTERVAL '30 days'
+      WHERE ${sql.unsafe(dateCondition)}
       GROUP BY category
       ORDER BY count DESC
       LIMIT 10
     `;
 
-    // Get feedback by location
+    // Get feedback by location (province and city)
     const locationStats = await sql`
       SELECT 
-        location,
+        provinsi,
+        kota,
+        kabupaten,
+        CASE 
+          WHEN kota IS NOT NULL AND kabupaten IS NOT NULL AND kota != kabupaten 
+          THEN CONCAT(kota, ', ', kabupaten, ', ', provinsi)
+          WHEN kota IS NOT NULL 
+          THEN CONCAT(kota, ', ', provinsi)
+          WHEN kabupaten IS NOT NULL 
+          THEN CONCAT(kabupaten, ', ', provinsi)
+          ELSE provinsi
+        END as location,
         COUNT(*) as count,
         COUNT(CASE WHEN urgency = 'high' THEN 1 END) as high_urgency_count
       FROM feedbacks
-      WHERE created_at >= NOW() - INTERVAL '30 days'
-      AND location IS NOT NULL
-      GROUP BY location
+      WHERE ${sql.unsafe(dateCondition)}
+      AND provinsi IS NOT NULL
+      GROUP BY provinsi, kota, kabupaten
       ORDER BY count DESC
-      LIMIT 10
+      LIMIT 20
     `;
 
     // Get recent high-priority feedbacks
@@ -115,6 +169,16 @@ export async function GET(request) {
       ORDER BY feedback_count DESC, high_priority_count DESC
     `;
 
+    // Get status pipeline counts
+    const statusCounts = await sql`
+      SELECT 
+        status,
+        COUNT(*) as count
+      FROM feedbacks
+      WHERE ${sql.unsafe(dateCondition)}
+      GROUP BY status
+    `;
+
     return NextResponse.json({
       success: true,
       user: {
@@ -126,7 +190,14 @@ export async function GET(request) {
       categoryStats,
       locationStats,
       recentHighPriority,
-      availableReports
+      availableReports,
+      statusCounts,
+      filterInfo: {
+        filter,
+        days,
+        startDate: customStart,
+        endDate: customEnd
+      }
     });
 
   } catch (error) {
