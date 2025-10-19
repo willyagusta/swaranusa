@@ -240,6 +240,47 @@ export default function AnalyticsDashboard({ user }) {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+            {/* Key Insights Summary */}
+            <div className="bg-gradient-to-r from-red-600 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <AlertCircle className="w-6 h-6" />
+          Insight Kunci & Rekomendasi
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
+            <div className="text-sm opacity-90 mb-1 text-purple-800">Total Feedback</div>
+            <div className="text-2xl font-bold mb-2 text-gray-700">{dashboardData?.stats?.total_feedbacks || 0}</div>
+            <div className="text-xs opacity-80 text-purple-600">
+              Feedback dalam 30 hari terakhir
+            </div>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
+            <div className="text-sm opacity-90 mb-1 text-purple-800">Prioritas Tinggi</div>
+            <div className="text-2xl font-bold mb-2 text-gray-700">{dashboardData?.stats?.high_urgency || 0}</div>
+            <div className="text-xs opacity-80 text-purple-600">
+              Memerlukan perhatian segera
+            </div>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
+            <div className="text-sm opacity-90 mb-1 text-purple-800">Sentimen Negatif</div>
+            <div className="text-2xl font-bold mb-2 text-gray-700">
+              {dashboardData?.stats?.negative_sentiment || 0} 
+              ({dashboardData?.stats?.total_feedbacks > 0 ? 
+                Math.round((dashboardData.stats.negative_sentiment / dashboardData.stats.total_feedbacks) * 100) : 0}%)
+            </div>
+            <div className="text-xs opacity-80 text-purple-600">
+              Ketidakpuasan yang perlu ditangani
+            </div>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
+            <div className="text-sm opacity-90 mb-1 text-purple-800">Terverifikasi</div>
+            <div className="text-2xl font-bold mb-2 text-gray-700">{dashboardData?.stats?.verified_feedbacks || 0}</div>
+            <div className="text-xs opacity-80 text-purple-600">
+              Diverifikasi oleh blockchain
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Header with Enhanced Date Filter - Sticky */}
       <div className="bg-white rounded-lg shadow p-6 sticky top-0 z-30">
         <div className="flex flex-col gap-4">
@@ -365,7 +406,7 @@ export default function AnalyticsDashboard({ user }) {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-blue-600">{parseInt(location.count || 0)}</p>
+                <p className="text-2xl font-bold text-purple-600">{parseInt(location.count || 0)}</p>
                 <p className="text-xs text-gray-500">feedback</p>
               </div>
             </div>
@@ -457,12 +498,27 @@ export default function AnalyticsDashboard({ user }) {
                 outerRadius={100}
                 fill="#8884d8"
                 dataKey="value"
+                nameKey="category"
               >
                 {analyticsData.categoryData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip 
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+                        <p className="font-semibold text-gray-900 mb-2">{payload[0].name}</p>
+                        <p className="text-sm" style={{ color: payload[0].payload.color }}>
+                          Jumlah: <span className="font-bold">{payload[0].value}</span>
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
           <div className="grid grid-cols-2 gap-3 mt-4">
@@ -493,13 +549,44 @@ export default function AnalyticsDashboard({ user }) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">
-              <span className="font-semibold text-red-600">50%</span> feedback menunjukkan sentimen negatif - 
-              memerlukan perhatian segera untuk meningkatkan kepuasan warga
-            </p>
-          </div>
-        </div>
+          {(() => {
+            const totalFeedback = analyticsData.sentimentData.reduce((sum, item) => sum + item.value, 0);
+            const negativeFeedback = analyticsData.sentimentData.find(item => item.name === 'Negatif')?.value || 0;
+            const negativePercentage = totalFeedback > 0 ? Math.round((negativeFeedback / totalFeedback) * 100) : 0;
+            
+            // Determine severity level and message
+            let bgColor, textColor, message, emoji;
+            if (negativePercentage >= 60) {
+              bgColor = 'bg-red-50';
+              textColor = 'text-red-600';
+              message = 'memerlukan tindakan mendesak untuk meningkatkan kepuasan warga';
+              emoji = '🚨';
+            } else if (negativePercentage >= 40) {
+              bgColor = 'bg-orange-50';
+              textColor = 'text-orange-600';
+              message = 'memerlukan perhatian segera untuk meningkatkan kepuasan warga';
+              emoji = '⚠️';
+            } else if (negativePercentage >= 20) {
+              bgColor = 'bg-yellow-50';
+              textColor = 'text-yellow-600';
+              message = 'perlu diperhatikan untuk menjaga kepuasan warga';
+              emoji = '⚡';
+            } else {
+              bgColor = 'bg-green-50';
+              textColor = 'text-green-600';
+              message = 'tingkat kepuasan warga cukup baik';
+              emoji = '✓';
+            }
+            
+            return (
+              <div className={`mt-4 p-4 ${bgColor} rounded-lg`}>
+                <p className="text-sm text-gray-600">
+                  {emoji} <span className={`font-semibold ${textColor}`}>{negativePercentage}%</span> feedback menunjukkan sentimen negatif - {message}
+                </p>
+              </div>
+            );
+          })()}
+        </div> 
       </div>
 
       {/* Enhanced Funnel Pipeline */}
@@ -542,9 +629,7 @@ export default function AnalyticsDashboard({ user }) {
                         }}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="bg-white bg-opacity-30 rounded-full w-10 h-10 flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">{idx + 1}</span>
-                          </div>
+                          <div className="bg-white bg-opacity-30 rounded-full w-10 h-10 flex items-center justify-center"></div>
                           <span className="text-white font-bold text-2xl">{stage.count}</span>
                         </div>
                         <div className="text-white text-sm font-medium">
@@ -580,26 +665,26 @@ export default function AnalyticsDashboard({ user }) {
 
           {/* Funnel Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 pt-6 border-t border-gray-200">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
-              <div className="text-sm text-blue-700 font-medium mb-1">Total Masuk</div>
-              <div className="text-3xl font-bold text-blue-900">
+            <div className="bg-gradient-to-br from-bred-50 to-purple-100 p-4 rounded-lg">
+              <div className="text-sm text-purple-700 font-medium mb-1">Total Masuk</div>
+              <div className="text-3xl font-bold text-grey-700">
                 {analyticsData.statusPipeline[0].count}
               </div>
-              <div className="text-xs text-blue-600 mt-1">Feedback baru diterima</div>
+              <div className="text-xs text-purple-600 mt-1">Feedback baru diterima</div>
             </div>
             
-            <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
-              <div className="text-sm text-green-700 font-medium mb-1">Conversion Rate</div>
-              <div className="text-3xl font-bold text-green-900">
+            <div className="bg-gradient-to-br from-red-50 to-purple-100 p-4 rounded-lg">
+              <div className="text-sm text-purple-700 font-medium mb-1">Conversion Rate</div>
+              <div className="text-3xl font-bold text-grey-700">
                 {((analyticsData.statusPipeline[analyticsData.statusPipeline.length - 1].count / analyticsData.statusPipeline[0].count) * 100).toFixed(1)}%
               </div>
-              <div className="text-xs text-green-600 mt-1">Feedback yang diselesaikan</div>
+              <div className="text-xs text-purple-600 mt-1">Feedback yang diselesaikan</div>
             </div>
             
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg">
-              <div className="text-sm text-orange-700 font-medium mb-1">Avg. Time to Complete</div>
-              <div className="text-3xl font-bold text-orange-900">8.5d</div>
-              <div className="text-xs text-orange-600 mt-1">Waktu rata-rata penyelesaian</div>
+            <div className="bg-gradient-to-br from-red-50 to-purple-100 p-4 rounded-lg">
+              <div className="text-sm text-purple-700 font-medium mb-1">Avg. Time to Complete</div>
+              <div className="text-3xl font-bold text-grey-700">8.5d</div>
+              <div className="text-xs text-purple-600 mt-1">Waktu rata-rata penyelesaian</div>
             </div>
           </div>
         </div>
@@ -614,48 +699,6 @@ export default function AnalyticsDashboard({ user }) {
                 Terdapat penurunan {(((analyticsData.statusPipeline[0].count - analyticsData.statusPipeline[1].count) / analyticsData.statusPipeline[0].count) * 100).toFixed(1)}% 
                 pada tahap "Dilihat". Pertimbangkan untuk menambah kapasitas tim review atau menyederhanakan proses awal.
               </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Key Insights Summary */}
-      <div className="bg-gradient-to-r from-red-600 to-purple-600 rounded-lg shadow-lg p-6 text-white">
-        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <AlertCircle className="w-6 h-6" />
-          Insight Kunci & Rekomendasi
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <div className="text-sm opacity-90 mb-1">Total Feedback</div>
-            <div className="text-2xl font-bold mb-2">{dashboardData?.stats?.total_feedbacks || 0}</div>
-            <div className="text-xs opacity-80">
-              Feedback dalam 30 hari terakhir
-            </div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <div className="text-sm opacity-90 mb-1">Prioritas Tinggi</div>
-            <div className="text-2xl font-bold mb-2">{dashboardData?.stats?.high_urgency || 0}</div>
-            <div className="text-xs opacity-80">
-              Memerlukan perhatian segera
-            </div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <div className="text-sm opacity-90 mb-1">Sentimen Negatif</div>
-            <div className="text-2xl font-bold mb-2">
-              {dashboardData?.stats?.negative_sentiment || 0} 
-              ({dashboardData?.stats?.total_feedbacks > 0 ? 
-                Math.round((dashboardData.stats.negative_sentiment / dashboardData.stats.total_feedbacks) * 100) : 0}%)
-            </div>
-            <div className="text-xs opacity-80">
-              Ketidakpuasan yang perlu ditangani
-            </div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <div className="text-sm opacity-90 mb-1">Terverifikasi</div>
-            <div className="text-2xl font-bold mb-2">{dashboardData?.stats?.verified_feedbacks || 0}</div>
-            <div className="text-xs opacity-80">
-              Diverifikasi oleh blockchain
             </div>
           </div>
         </div>
