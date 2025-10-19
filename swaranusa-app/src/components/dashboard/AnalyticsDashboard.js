@@ -15,7 +15,6 @@ export default function AnalyticsDashboard({ user }) {
   const [showCustomDate, setShowCustomDate] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
-  const [generating, setGenerating] = useState(false);
 
   // Color schemes
   const SENTIMENT_COLORS = {
@@ -62,34 +61,6 @@ export default function AnalyticsDashboard({ user }) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const generateReport = async (category, kota, kabupaten, provinsi) => {
-    setGenerating(true);
-    try {
-      const response = await fetch('/api/government/reports', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ category, kota, kabupaten, provinsi }),
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        alert('Laporan berhasil dibuat! Silakan cek tab "Laporan" untuk melihatnya.');
-        // Optionally refresh dashboard data
-        fetchDashboardData();
-      } else {
-        alert('Gagal membuat laporan: ' + (data.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Error generating report:', error);
-      alert('Gagal membuat laporan');
-    } finally {
-      setGenerating(false);
     }
   };
 
@@ -268,49 +239,7 @@ export default function AnalyticsDashboard({ user }) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Generate Report Section */}
-      {dashboardData?.availableReports && dashboardData.availableReports.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="mb-4">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Buat Laporan AI
-            </h2>
-            <p className="text-gray-600 text-sm mt-1">Pilih kombinasi kategori dan lokasi untuk membuat laporan otomatis dengan AI</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
-            {dashboardData.availableReports.slice(0, 20).map((item, index) => (
-              <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{item.category}</p>
-                  <p className="text-sm text-gray-600">{item.location_display}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {item.feedback_count} feedback • {item.high_priority_count} prioritas tinggi
-                  </p>
-                </div>
-                <button
-                  onClick={() => generateReport(item.category, item.kota, item.kabupaten, item.provinsi)}
-                  disabled={generating}
-                  className="ml-3 bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors"
-                >
-                  {generating ? 'Membuat...' : 'Buat Laporan'}
-                </button>
-              </div>
-            ))}
-          </div>
-          {generating && (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                <span className="font-semibold">⏳ AI sedang membuat laporan...</span> Proses ini memerlukan waktu 2-3 menit. Silakan tunggu.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header with Enhanced Date Filter - Sticky */}
       <div className="bg-white rounded-lg shadow p-6 sticky top-0 z-30">
         <div className="flex flex-col gap-4">

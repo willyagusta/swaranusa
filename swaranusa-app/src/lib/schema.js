@@ -50,6 +50,7 @@ export const feedbacks = pgTable('feedbacks', {
   blockchainHash: text('blockchain_hash'), // Transaction hash on blockchain
   blockchainVerified: boolean('blockchain_verified').default(false),
   verificationData: jsonb('verification_data'), // Contains block number, timestamp, etc.
+  compiledIntoReports: jsonb('compiled_into_reports').default([]), // Array of report IDs
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
@@ -92,5 +93,7 @@ export const governmentReports = pgTable('government_reports', {
   recommendations: jsonb('recommendations'), // Array of recommendations
   reportContent: text('report_content'), // Full report text
   generatedBy: integer('generated_by').references(() => users.id), // Changed from createdBy
+  includesFeedbacksFrom: timestamp('includes_feedbacks_from'), // Start date of feedbacks included
+  includesFeedbacksUntil: timestamp('includes_feedbacks_until'), // End date of feedbacks included
   createdAt: timestamp('created_at').defaultNow(),
 });

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import FeedbackStatusManager from '@/components/FeedbackStatusManager';
 import AnalyticsDashboard from '@/components/dashboard/AnalyticsDashboard';
+import GenerateReport from '@/components/dashboard/GenerateReport';
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -72,7 +73,7 @@ function GovernmentContent() {
   const [feedbacks, setFeedbacks] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
-  const [generating, setGenerating] = useState(false);
+  const [generating, setGenerating] = useState(false); // ADD THIS LINE
   const [loading_feedbacks, setLoadingFeedbacks] = useState(false);
   const [error, setError] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -215,12 +216,17 @@ function GovernmentContent() {
       if (data.success) {
         setReports([data.report, ...reports]);
         setSelectedReport(data.report);
+        alert('Laporan berhasil dibuat! Silakan cek tab "Laporan" untuk melihatnya.');
+        // Optionally refresh dashboard data
+        fetchDashboardData();
       } else {
         setError(data.error);
+        alert('Gagal membuat laporan: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error generating report:', error);
       setError('Gagal membuat laporan');
+      alert('Gagal membuat laporan');
     } finally {
       setGenerating(false);
     }
@@ -638,7 +644,8 @@ function GovernmentContent() {
             {[
               { id: 'dashboard', label: 'Dashboard' },
               { id: 'feedbacks', label: 'Feedback Warga' },
-              { id: 'reports', label: 'Laporan' }
+              { id: 'reports', label: 'Laporan' },
+              { id: 'generate-report', label: 'Buat Laporan AI' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -674,7 +681,8 @@ function GovernmentContent() {
                 {[
                   { id: 'dashboard', label: 'Dashboard' },
                   { id: 'feedbacks', label: 'Feedback Warga' },
-                  { id: 'reports', label: 'Laporan' }
+                  { id: 'reports', label: 'Laporan' },
+                  { id: 'generate-report', label: 'Buat Laporan AI' }
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -736,7 +744,7 @@ function GovernmentContent() {
             <div className="p-6">
               {loading_feedbacks ? (
                 <div className="text-center py-8">
-                  <div className="w-8 h-8 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                  <div className="w-8 h-8 border-4 border-purple-300 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
                   <p className="text-gray-600">Memuat feedback...</p>
                 </div>
               ) : feedbacks.length > 0 ? (
@@ -846,6 +854,11 @@ function GovernmentContent() {
               )}
             </div>
           </div>
+        )}
+
+        {/* Generate Report Tab */}
+        {activeTab === 'generate-report' && (
+          <GenerateReport dashboardData={dashboardData} generating={generating} generateReport={generateReport} />
         )}
       </div>
 

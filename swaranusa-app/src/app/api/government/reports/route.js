@@ -111,11 +111,23 @@ export async function POST(request) {
       );
     }
 
-    // Get feedbacks for the specified category and location
+    // Check if a report already exists for this combination
+    const [existingReport] = await sql`
+      SELECT created_at 
+      FROM government_reports 
+      WHERE category = ${category} 
+      AND kota = ${kota} 
+      AND kabupaten = ${kabupaten} 
+      AND provinsi = ${provinsi}
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `;
+
+    // Get feedbacks - only those created after the last report (if exists)
     let feedbacks;
-    
+    const lastReportDate = existingReport?.created_at || '1970-01-01';
+
     if (kabupaten && kabupaten !== kota) {
-      // Search by kota, kabupaten, and provinsi
       feedbacks = await sql`
         SELECT 
           f.*,
@@ -127,10 +139,10 @@ export async function POST(request) {
         AND f.kota = ${kota}
         AND f.kabupaten = ${kabupaten}
         AND f.provinsi = ${provinsi}
+        AND f.created_at > ${lastReportDate}
         ORDER BY f.created_at DESC
       `;
     } else {
-      // Search by kota and provinsi (when kota is same as kabupaten or kabupaten not specified)
       feedbacks = await sql`
         SELECT 
           f.*,
@@ -141,14 +153,19 @@ export async function POST(request) {
         WHERE f.category = ${category} 
         AND (f.kota = ${kota} OR f.kabupaten = ${kota})
         AND f.provinsi = ${provinsi}
+        AND f.created_at > ${lastReportDate}
         ORDER BY f.created_at DESC
       `;
     }
 
-    if (feedbacks.length === 0) {
+    if (feedbacks.length < 3) {
       return NextResponse.json(
-        { error: 'No feedbacks found for the specified category and location' },
-        { status: 404 }
+        { 
+          error: 'Minimal 3 feedback baru diperlukan untuk membuat laporan',
+          existingReportDate: existingReport?.created_at,
+          newFeedbackCount: feedbacks.length
+        },
+        { status: 400 }
       );
     }
 

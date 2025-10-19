@@ -143,30 +143,79 @@ export async function GET(request) {
 
     // Get available category-location combinations for report generation
     const availableReports = await sql`
+      WITH report_combinations AS (
+        SELECT DISTINCT
+          category,
+          kota,
+          kabupaten,
+          provinsi
+        FROM government_reports
+      ),
+      feedback_combinations AS (
+        SELECT 
+          f.category,
+          f.kota,
+          f.kabupaten,
+          f.provinsi,
+          CASE 
+            WHEN f.kota IS NOT NULL AND f.kabupaten IS NOT NULL AND f.kota != f.kabupaten 
+            THEN CONCAT(f.kota, ', ', f.kabupaten, ', ', f.provinsi)
+            WHEN f.kota IS NOT NULL 
+            THEN CONCAT(f.kota, ', ', f.provinsi)
+            WHEN f.kabupaten IS NOT NULL 
+            THEN CONCAT(f.kabupaten, ', ', f.provinsi)
+            ELSE f.provinsi
+          END as location_display,
+          COUNT(*) as feedback_count,
+          COUNT(CASE WHEN f.urgency = 'high' THEN 1 END) as high_priority_count,
+          MAX(f.created_at) as latest_feedback,
+          -- Check if report exists for this combination
+          COALESCE(
+            (SELECT MAX(gr.created_at) 
+             FROM government_reports gr 
+             WHERE gr.category = f.category 
+             AND gr.kota = f.kota 
+             AND gr.kabupaten = f.kabupaten 
+             AND gr.provinsi = f.provinsi
+            ), NULL
+          ) as last_report_date,
+          -- Count new feedbacks since last report
+          COUNT(CASE 
+            WHEN f.created_at > COALESCE(
+              (SELECT MAX(gr.created_at) 
+               FROM government_reports gr 
+               WHERE gr.category = f.category 
+               AND gr.kota = f.kota 
+               AND gr.kabupaten = f.kabupaten 
+               AND gr.provinsi = f.provinsi
+              ), '1970-01-01'::timestamp
+            ) THEN 1 
+          END) as new_feedback_count
+        FROM feedbacks f
+        WHERE f.category IS NOT NULL 
+        AND f.provinsi IS NOT NULL
+        AND (f.kota IS NOT NULL OR f.kabupaten IS NOT NULL)
+        GROUP BY f.category, f.kota, f.kabupaten, f.provinsi
+        HAVING COUNT(*) >= 3
+      )
       SELECT 
         category,
         kota,
         kabupaten,
         provinsi,
+        location_display,
+        feedback_count,
+        high_priority_count,
+        latest_feedback,
+        last_report_date,
+        new_feedback_count,
         CASE 
-          WHEN kota IS NOT NULL AND kabupaten IS NOT NULL AND kota != kabupaten 
-          THEN CONCAT(kota, ', ', kabupaten, ', ', provinsi)
-          WHEN kota IS NOT NULL 
-          THEN CONCAT(kota, ', ', provinsi)
-          WHEN kabupaten IS NOT NULL 
-          THEN CONCAT(kabupaten, ', ', provinsi)
-          ELSE provinsi
-        END as location_display,
-        COUNT(*) as feedback_count,
-        COUNT(CASE WHEN urgency = 'high' THEN 1 END) as high_priority_count,
-        MAX(created_at) as latest_feedback
-      FROM feedbacks
-      WHERE category IS NOT NULL 
-      AND provinsi IS NOT NULL
-      AND (kota IS NOT NULL OR kabupaten IS NOT NULL)
-      GROUP BY category, kota, kabupaten, provinsi
-      HAVING COUNT(*) >= 3
-      ORDER BY feedback_count DESC, high_priority_count DESC
+          WHEN last_report_date IS NULL THEN 'no_report'
+          WHEN new_feedback_count >= 3 THEN 'new_feedbacks_available'
+          ELSE 'report_exists'
+        END as report_status
+      FROM feedback_combinations
+      ORDER BY new_feedback_count DESC, feedback_count DESC, high_priority_count DESC
     `;
 
     // Get status pipeline counts
