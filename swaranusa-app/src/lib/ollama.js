@@ -21,17 +21,38 @@ export class FeedbackClusteringService {
       
       {
         "cleanedContent": "Professional version in Indonesian",
-        "category": "infrastruktur|kesehatan|pendidikan|lingkungan|transportasi|keamanan|ekonomi|sosial|pemerintahan|teknologi",
+        "category": "single_category_only",
         "urgency": "low|medium|high",
         "sentiment": "positive|negative|neutral",
-        "tags": ["keyword1", "keyword2"],
+        "tags": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
         "locationRelevance": "high|medium|low",
         "suggestedDepartment": "Department name in Indonesian"
       }
 
+      INSTRUCTIONS FOR cleanedContent:
+      - Rewrite the original feedback in formal, professional Indonesian
+      - Keep the core message and meaning intact
+      - Remove any offensive language, slang, or informal words
+      - Make it suitable for government review
+      - Example: "jalan rusak parah bgt gk bisa lewat" → "Jalan mengalami kerusakan parah dan tidak dapat dilalui"
+
+      IMPORTANT TAG INSTRUCTIONS:
+      - Generate 3-7 specific, relevant tags (NOT generic ones like "masukan" or "warga")
+      - Tags should capture: main issue, affected facilities, specific problems, action words
+      - Extract actual keywords from the feedback content
+      - Examples:
+        * "Jalan rusak di depan sekolah" → ["jalan-rusak", "sekolah", "akses-pendidikan", "infrastruktur-jalan"]
+        * "Sampah menumpuk di pasar" → ["sampah", "pasar", "kebersihan", "pengelolaan-sampah", "lingkungan"]
+        * "Rumah sakit kekurangan obat" → ["rumah-sakit", "obat", "fasilitas-kesehatan", "ketersediaan-obat"]
+      - AVOID generic tags like: "masukan", "warga", "keluhan", "feedback"
+
       Be aware of the terms mentioned in the feedback and categorize the feedback accordingly. EXAMPLE: "kurang sekolah sangat sulit mengakses pendidikan formal" → category should be "pendidikan"
+      CATEGORY RULES:
+      - Choose EXACTLY ONE category from the list below
+      - Return ONLY the category name, no pipes or multiple values
+      - Example: "pendidikan" NOT "pendidikan|sekolah" or "pendidikan|sosial"
       
-    Categories:
+    Available Categories (choose ONE):
     - infrastruktur: roads, bridges, water, electricity, jalan, jembatan, air bersih, listrik
     - kesehatan: hospitals, medical facilities, rumah sakit, fasilitas kesehatan, dokter, obat
     - pendidikan: schools, education, sekolah, pendidikan, guru, fasilitas belajar, akses sekolah
@@ -43,7 +64,7 @@ export class FeedbackClusteringService {
     - pemerintahan: government services, bureaucracy, layanan pemerintah, birokrasi, korupsi
     - teknologi: digital services, tech, layanan digital, internet, teknologi
       
-      Respond ONLY with JSON.
+      Respond ONLY with JSON. No markdown, no explanations.
       `;
 
       const response = await ollama.chat({
@@ -108,17 +129,34 @@ export class FeedbackClusteringService {
         Category: ${newFeedback.category}
         Location: ${newFeedback.originalLocation?.provinsi}, ${newFeedback.originalLocation?.kota}, ${newFeedback.originalLocation?.kabupaten}
         Tags: ${JSON.stringify(newFeedback.tags)}
+        Urgency: ${newFeedback.urgency}
+        Sentiment: ${newFeedback.sentiment}
         
         EXISTING FEEDBACKS:
         ${existingFeedbacks.map((fb, idx) => `
         ${idx + 1}. ID: ${fb.id}, Content: "${fb.content.substring(0, 200)}...", Category: ${fb.category}, Cluster: ${fb.clusterId}
         `).join('')}
         
-        Rules for clustering:
-        - Same category + similar location (same province/city) + similar content = cluster together
-        - Different categories = separate clusters
-        - Same category but very different locations = separate clusters
-        - Similarity score: 80+ = cluster together, 50-79 = maybe, <50 = separate
+        CLUSTERING RULES (apply in order):
+        1. CATEGORY MATCH (40 points): Must be same category
+        2. LOCATION PROXIMITY (25 points):
+          - Same city/kabupaten: +25 points
+          - Same province only: +15 points
+          - Different province: +0 points
+        3. TAG SIMILARITY (20 points):
+          - 3+ matching tags: +20 points
+          - 2 matching tags: +12 points
+          - 1 matching tag: +6 points
+        4. CONTENT SEMANTIC SIMILARITY (15 points):
+          - Very similar problem/issue: +15 points
+          - Somewhat related: +8 points
+          - Different issues: +0 points
+
+        DECISION CRITERIA:
+        - Score 80+: MUST cluster together (high confidence)
+        - Score 60-79: Cluster together (moderate confidence)
+        - Score 40-59: Create new cluster (low similarity)
+        - Score <40: Definitely separate cluster
         
         Respond with JSON (reason must be in Indonesian):
         {
@@ -128,7 +166,7 @@ export class FeedbackClusteringService {
           "reason": "explanation in Indonesian language"
         }
         
-        Respond ONLY with valid JSON.
+        Respond ONLY with valid JSON. No markdown, no explanations.
       `;
 
       const response = await ollama.chat({
