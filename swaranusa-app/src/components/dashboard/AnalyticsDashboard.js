@@ -697,7 +697,7 @@ export default function AnalyticsDashboard({ user }) {
               <p className="font-semibold text-yellow-900 mb-1">Perhatian: Bottleneck Terdeteksi</p>
               <p className="text-sm text-yellow-800">
                 Terdapat penurunan {(((analyticsData.statusPipeline[0].count - analyticsData.statusPipeline[1].count) / analyticsData.statusPipeline[0].count) * 100).toFixed(1)}% 
-                pada tahap "Dilihat". Pertimbangkan untuk menambah kapasitas tim review atau menyederhanakan proses awal.
+                pada tahap &quot;Dilihat&quot;. Pertimbangkan untuk menambah kapasitas tim review atau menyederhanakan proses awal.
               </p>
             </div>
           </div>
