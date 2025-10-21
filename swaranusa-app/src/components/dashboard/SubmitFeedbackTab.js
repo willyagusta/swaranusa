@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getProvinces, getCitiesAndRegencies } from '@/data/indonesia-locations';
+import { getProvinces, getCitiesAndRegencies, getRegenciesForCity } from '@/data/indonesia-locations';
 
 export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
   const [formData, setFormData] = useState({
@@ -17,6 +17,14 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
   const [submitting, setSubmitting] = useState(false);
   const [loadingState, setLoadingState] = useState('');
   const [error, setError] = useState('');
+
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recognition, setRecognition] = useState(null);
+  const [processingVoice, setProcessingVoice] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [processingStage, setProcessingStage] = useState('');
+
   
   // AI Suggestions state
   const [aiEnabled, setAiEnabled] = useState(true); // Default: AI suggestions active
@@ -25,6 +33,7 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [showTitleSuggestions, setShowTitleSuggestions] = useState(false);
   const [showContentSuggestions, setShowContentSuggestions] = useState(false);
+  
 
   // Update available cities/regencies when province changes
   useEffect(() => {
@@ -43,6 +52,149 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
       setAvailableRegencies([]);
     }
   }, [formData.provinsi]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'id-ID'; // Indonesian language
+      
+      let finalTranscript = '';
+      
+      recognitionInstance.onresult = (event) => {
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript = transcript;
+          }
+        }
+        
+        setVoiceTranscript(finalTranscript + interimTranscript);
+      };
+      
+      recognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setError('Gagal merekam suara: ' + event.error);
+        setIsRecording(false);
+      };
+      
+      recognitionInstance.onend = async () => {
+        setIsRecording(false);
+        
+        // Process the final transcript with AI
+        if (finalTranscript.trim().length > 10) {
+          await processVoiceWithAI(finalTranscript.trim());
+        }
+        
+        finalTranscript = ''; // Reset for next recording
+      };
+      
+      setRecognition(recognitionInstance);
+    }
+  }, []);
+  
+  // Process voice transcript with AI
+  const processVoiceWithAI = async (transcript) => {
+    setProcessingVoice(true);
+    setProcessingStage('analyzing');
+    setLoadingState('🔍 Menganalisis rekaman suara Anda...');
+    
+    try {
+      // Stage 1: Analyzing
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setProcessingStage('extracting');
+      setLoadingState('📝 Mengekstrak informasi penting (judul, lokasi, masalah)...');
+      
+      const response = await fetch('/api/ai/process-voice-feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transcript }),
+      });
+      
+      // Stage 2: Processing
+      setProcessingStage('structuring');
+      setLoadingState('✨ AI menyusun masukan Anda...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Stage 3: Finalizing
+        setProcessingStage('finalizing');
+        setLoadingState('✅ Hampir selesai...');
+        await new Promise(resolve => setTimeout(resolve, 400));
+        
+        // Auto-fill form fields with AI-processed data
+        setFormData(prev => ({
+          ...prev,
+          title: result.data.title,
+          location: result.data.location !== 'Tidak disebutkan' ? result.data.location : '',
+          content: result.data.content
+        }));
+        
+        setError('');
+        setLoadingState('✓ Masukan berhasil diproses! Silakan pilih Provinsi, Kota, dan Kabupaten.');
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setLoadingState('');
+        }, 5000);
+      } else {
+        setError(result.error || 'Gagal memproses rekaman');
+        setLoadingState('');
+      }
+      
+    } catch (error) {
+      console.error('Error processing voice:', error);
+      setError('Terjadi kesalahan saat memproses rekaman');
+      setLoadingState('');
+    } finally {
+      setProcessingVoice(false);
+      setProcessingStage('');
+      setVoiceTranscript('');
+    }
+  };
+  
+  // Toggle voice recording
+  const toggleRecording = () => {
+    if (!recognition) {
+      setError('Speech recognition tidak didukung di browser ini. Gunakan Chrome atau Edge.');
+      return;
+    }
+    
+    if (isRecording) {
+      recognition.stop();
+      setIsRecording(false);
+    } else {
+      setVoiceTranscript('');
+      recognition.start();
+      setIsRecording(true);
+      setError('');
+    }
+  };
+
+  // Update available cities/regencies when kota changes
+  useEffect(() => {
+    if (formData.kota && formData.provinsi) {
+      // Get regencies specific to the selected city
+      const cityRegencies = getRegenciesForCity(formData.provinsi, formData.kota);
+      setAvailableRegencies(cityRegencies);
+      // Reset kabupaten when kota changes
+      setFormData(prev => ({ ...prev, kabupaten: '' }));
+    } else if (formData.provinsi && !formData.kota) {
+      // Show all standalone regencies when no city is selected
+      const { regencies } = getCitiesAndRegencies(formData.provinsi);
+      setAvailableRegencies(regencies);
+    }
+  }, [formData.kota, formData.provinsi]);
 
   // Debounced AI suggestions
   const debounce = (func, wait) => {
@@ -508,11 +660,119 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
             )}
           </div>
 
+          {/* Voice Recording Button */}
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              type="button"
+              onClick={toggleRecording}
+              disabled={processingVoice}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isRecording 
+                  ? 'bg-red-600 text-white hover:bg-red-700 animate-pulse' 
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {isRecording ? (
+                <>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <rect x="6" y="6" width="8" height="8" rx="1"/>
+                  </svg>
+                  <span>Berhenti Merekam</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+                  </svg>
+                  <span>Rekam Suara</span>
+                </>
+              )}
+            </button>
+            
+            {isRecording && (
+              <span className="text-sm text-gray-600 animate-pulse">
+                🎤 Sedang merekam... Silakan berbicara
+              </span>
+            )}
+          </div>
+
+          {/* Success Notification */}
+          {!processingVoice && loadingState.includes('✓') && (
+            <div className="mt-6 bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border-2 border-green-400 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-lg font-bold text-green-900">Berhasil! 🎉</h4>
+                  <p className="text-green-700 font-medium">{loadingState}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* AI Processing Indicator */}
+          {processingVoice && (
+            <div className="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border-2 border-purple-300 shadow-lg animate-fadeIn">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="relative">
+                  <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xl">🤖</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-lg font-bold text-purple-900">AI Sedang Bekerja</h4>
+                  <p className="text-purple-700 font-medium">{loadingState}</p>
+                </div>
+              </div>
+              
+              {/* Processing Stages */}
+              <div className="space-y-3 bg-white/50 p-4 rounded-lg">
+                <div className={`flex items-center gap-3 transition-all ${processingStage === 'analyzing' ? 'text-purple-700 font-semibold transform scale-105' : 'text-gray-500'}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${processingStage === 'analyzing' ? 'bg-purple-600 text-white animate-pulse shadow-lg' : processingStage !== '' && processingStage !== 'analyzing' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                    {processingStage === 'analyzing' ? '⏳' : processingStage !== '' && processingStage !== 'analyzing' ? '✓' : '1'}
+                  </span>
+                  <span>🔍 Menganalisis rekaman suara</span>
+                </div>
+                
+                <div className={`flex items-center gap-3 transition-all ${processingStage === 'extracting' ? 'text-purple-700 font-semibold transform scale-105' : 'text-gray-500'}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${processingStage === 'extracting' ? 'bg-purple-600 text-white animate-pulse shadow-lg' : ['structuring', 'finalizing'].includes(processingStage) ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                    {processingStage === 'extracting' ? '⏳' : ['structuring', 'finalizing'].includes(processingStage) ? '✓' : '2'}
+                  </span>
+                  <span>📝 Mengekstrak informasi (judul, lokasi, masalah)</span>
+                </div>
+                
+                <div className={`flex items-center gap-3 transition-all ${processingStage === 'structuring' ? 'text-purple-700 font-semibold transform scale-105' : 'text-gray-500'}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${processingStage === 'structuring' ? 'bg-purple-600 text-white animate-pulse shadow-lg' : processingStage === 'finalizing' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                    {processingStage === 'structuring' ? '⏳' : processingStage === 'finalizing' ? '✓' : '3'}
+                  </span>
+                  <span>✨ Menyusun masukan dengan struktur profesional</span>
+                </div>
+                
+                <div className={`flex items-center gap-3 transition-all ${processingStage === 'finalizing' ? 'text-purple-700 font-semibold transform scale-105' : 'text-gray-500'}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${processingStage === 'finalizing' ? 'bg-purple-600 text-white animate-pulse shadow-lg' : 'bg-gray-300 text-gray-600'}`}>
+                    {processingStage === 'finalizing' ? '⏳' : '4'}
+                  </span>
+                  <span>✅ Mengisi formulir secara otomatis</span>
+                </div>
+              </div>
+              
+              <div className="mt-4 p-3 bg-white rounded border border-purple-200">
+                <p className="text-xs text-gray-600">
+                  💡 <strong>Tip:</strong> Proses ini biasanya memerlukan waktu 3-5 detik tergantung panjang rekaman.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Submit Button */}
           <div className="flex justify-center">
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || processingVoice}
               className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               {submitting ? (
@@ -526,6 +786,11 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
                       {getLoadingSubtext()}
                     </p>
                   )}
+                </div>
+              ) : processingVoice ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>AI Memproses...</span>
                 </div>
               ) : (
                 <>
