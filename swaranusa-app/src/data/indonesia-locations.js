@@ -17,14 +17,14 @@ export const indonesiaLocations = {
   },
   "Sumatera Utara": {
     cities: {
-      "Binjai": [],
-      "Gunungsitoli": [],
-      "Medan": [],
-      "Padang Sidempuan": [],
-      "Pematangsiantar": [],
-      "Sibolga": [],
-      "Tanjungbalai": [],
-      "Tebing Tinggi": []
+      "Binjai": ["Langkat"],
+      "Gunungsitoli": ["Nias"],
+      "Medan": ["Deli Serdang"],
+      "Padang Sidempuan": ["Mandailing Natal", "Padang Lawas"],
+      "Pematangsiantar": ["Simalungun"],
+      "Sibolga": ["Tapanuli Tengah"],
+      "Tanjungbalai": ["Asahan"],
+      "Tebing Tinggi": ["Serdang Bedagai"]
     },
     regencies: [
       "Asahan", "Batubara", "Dairi", "Deli Serdang", "Humbang Hasundutan",
@@ -37,13 +37,13 @@ export const indonesiaLocations = {
   },
   "Sumatera Barat": {
     cities: {
-      "Bukittinggi": [],
-      "Padang": [],
-      "Padang Panjang": [],
-      "Pariaman": [],
-      "Payakumbuh": [],
-      "Sawahlunto": [],
-      "Solok": []
+      "Bukittinggi": ["Agam"],
+      "Padang": ["Padang Pariaman"],
+      "Padang Panjang": ["Tanah Datar"],
+      "Pariaman": ["Padang Pariaman"],
+      "Payakumbuh": ["Lima Puluh Kota"],
+      "Sawahlunto": ["Sijunjung"],
+      "Solok": ["Solok"]
     },
     regencies: [
       "Agam", "Dharmasraya", "Kepulauan Mentawai", "Lima Puluh Kota", "Padang Pariaman",
@@ -53,8 +53,8 @@ export const indonesiaLocations = {
   },
   "Riau": {
     cities: {
-      "Dumai": [],
-      "Pekanbaru": []
+      "Dumai": ["Rokan Hilir"],
+      "Pekanbaru": ["Kampar"]
     },
     regencies: [
       "Bengkalis", "Indragiri Hilir", "Indragiri Hulu", "Kampar", "Kepulauan Meranti",
@@ -63,15 +63,15 @@ export const indonesiaLocations = {
   },
   "Kepulauan Riau": {
     cities: {
-      "Batam": [],
-      "Tanjung Pinang": []
+      "Batam": ["Bintan"],
+      "Tanjung Pinang": ["Bintan"]
     },
     regencies: ["Bintan", "Karimun", "Kepulauan Anambas", "Lingga", "Natuna"]
   },
   "Jambi": {
     cities: {
-      "Jambi": [],
-      "Sungai Penuh": []
+      "Jambi": ["Muaro Jambi"],
+      "Sungai Penuh": ["Kerinci"]
     },
     regencies: [
       "Batanghari", "Bungo", "Kerinci", "Merangin", "Muaro Jambi",
@@ -80,10 +80,10 @@ export const indonesiaLocations = {
   },
   "Sumatera Selatan": {
     cities: {
-      "Lubuklinggau": [],
-      "Pagar Alam": [],
-      "Palembang": [],
-      "Prabumulih": []
+      "Lubuklinggau": ["Musi Rawas"],
+      "Pagar Alam": ["Lahat"],
+      "Palembang": ["Ogan Ilir"],
+      "Prabumulih": ["Muara Enim"]
     },
     regencies: [
       "Banyuasin", "Empat Lawang", "Lahat", "Muara Enim", "Musi Banyuasin",
@@ -104,8 +104,8 @@ export const indonesiaLocations = {
   },
   "Lampung": {
     cities: {
-      "Bandar Lampung": [],
-      "Metro": []
+      "Bandar Lampung": ["Lampung Selatan"],
+      "Metro": ["Lampung Tengah"]
     },
     regencies: [
       "Lampung Barat", "Lampung Selatan", "Lampung Tengah", "Lampung Timur",
@@ -125,11 +125,11 @@ export const indonesiaLocations = {
   },
   "DKI Jakarta": {
     cities: {
-      "Jakarta Barat": [],
-      "Jakarta Pusat": [],
-      "Jakarta Selatan": [],
-      "Jakarta Timur": [],
-      "Jakarta Utara": []
+      "Jakarta Barat": ["Kepulauan Seribu"],
+      "Jakarta Pusat": ["Kepulauan Seribu"],
+      "Jakarta Selatan": ["Kepulauan Seribu"],
+      "Jakarta Timur": ["Kepulauan Seribu"],
+      "Jakarta Utara": ["Kepulauan Seribu"]
     },
     regencies: ["Kepulauan Seribu"]
   },
@@ -153,12 +153,12 @@ export const indonesiaLocations = {
   },
   "Jawa Tengah": {
     cities: {
-      "Magelang": [],
-      "Pekalongan": [],
-      "Salatiga": [],
-      "Semarang": [],
-      "Surakarta": [],
-      "Tegal": []
+      "Magelang": ["Magelang"],
+      "Pekalongan": ["Pekalongan"],
+      "Salatiga": ["Semarang"],
+      "Semarang": ["Semarang"],
+      "Surakarta": ["Sukoharjo"],
+      "Tegal": ["Tegal"]
     },
     regencies: [
       "Banjarnegara", "Banyumas", "Batang", "Blora", "Boyolali", "Brebes",
@@ -176,15 +176,15 @@ export const indonesiaLocations = {
   },
   "Jawa Timur": {
     cities: {
-      "Batu": [],
-      "Blitar": [],
-      "Kediri": [],
-      "Madiun": [],
-      "Malang": [],
-      "Mojokerto": [],
-      "Pasuruan": [],
-      "Probolinggo": [],
-      "Surabaya": []
+      "Batu": ["Malang"],
+      "Blitar": ["Blitar"],
+      "Kediri": ["Kediri"],
+      "Madiun": ["Madiun"],
+      "Malang": ["Malang"],
+      "Mojokerto": ["Mojokerto"],
+      "Pasuruan": ["Pasuruan"],
+      "Probolinggo": ["Probolinggo"],
+      "Surabaya": ["Sidoarjo"]
     },
     regencies: [
       "Bangkalan", "Banyuwangi", "Blitar", "Bojonegoro", "Bondowoso", "Gresik",
@@ -196,9 +196,9 @@ export const indonesiaLocations = {
   },
   "Banten": {
     cities: {
-      "Cilegon": [],
-      "Serang": [],
-      "Tangerang": []
+      "Cilegon": ["Serang"],
+      "Serang": ["Serang"],
+      "Tangerang": ["Tangerang"]
     },
     regencies: ["Lebak", "Pandeglang", "Serang", "Tangerang"]
   },
@@ -210,8 +210,8 @@ export const indonesiaLocations = {
   },
   "Nusa Tenggara Barat": {
     cities: {
-      "Bima": [],
-      "Mataram": []
+      "Bima": ["Bima"],
+      "Mataram": ["Lombok Barat"]
     },
     regencies: [
       "Bima", "Dompu", "Lombok Barat", "Lombok Tengah", "Lombok Timur",
@@ -234,8 +234,8 @@ export const indonesiaLocations = {
   },
   "Kalimantan Barat": {
     cities: {
-      "Pontianak": [],
-      "Singkawang": []
+      "Pontianak": ["Kubu Raya"],
+      "Singkawang": ["Sambas"]
     },
     regencies: [
       "Bengkayang", "Kapuas Hulu", "Kayong Utara", "Ketapang", "Kubu Raya",
@@ -256,8 +256,8 @@ export const indonesiaLocations = {
   },
   "Kalimantan Selatan": {
     cities: {
-      "Banjarbaru": [],
-      "Banjarmasin": []
+      "Banjarbaru": ["Banjar"],
+      "Banjarmasin": ["Banjar"]
     },
     regencies: [
       "Balangan", "Banjar", "Barito Kuala", "Hulu Sungai Selatan", "Hulu Sungai Tengah",
@@ -266,9 +266,9 @@ export const indonesiaLocations = {
   },
   "Kalimantan Timur": {
     cities: {
-      "Balikpapan": [],
-      "Bontang": [],
-      "Samarinda": []
+      "Balikpapan": ["Kutai Kartanegara"],
+      "Bontang": ["Kutai Timur"],
+      "Samarinda": ["Kutai Kartanegara"]
     },
     regencies: [
       "Berau", "Kutai Barat", "Kutai Kartanegara", "Kutai Timur", "Mahakam Ulu",
@@ -283,10 +283,10 @@ export const indonesiaLocations = {
   },
   "Sulawesi Utara": {
     cities: {
-      "Bitung": [],
-      "Kotamobagu": [],
-      "Manado": [],
-      "Tomohon": []
+      "Bitung": ["Minahasa Utara"],
+      "Kotamobagu": ["Bolaang Mongondow"],
+      "Manado": ["Minahasa"],
+      "Tomohon": ["Minahasa"]
     },
     regencies: [
       "Bolaang Mongondow", "Bolaang Mongondow Selatan", "Bolaang Mongondow Timur",
@@ -306,9 +306,9 @@ export const indonesiaLocations = {
   },
   "Sulawesi Selatan": {
     cities: {
-      "Makassar": [],
-      "Palopo": [],
-      "Parepare": []
+      "Makassar": ["Gowa"],
+      "Palopo": ["Luwu"],
+      "Parepare": ["Pinrang"]
     },
     regencies: [
       "Bantaeng", "Barru", "Bone", "Bulukumba", "Enrekang", "Gowa", "Jeneponto",
@@ -319,8 +319,8 @@ export const indonesiaLocations = {
   },
   "Sulawesi Tenggara": {
     cities: {
-      "Baubau": [],
-      "Kendari": []
+      "Baubau": ["Buton"],
+      "Kendari": ["Konawe"]
     },
     regencies: [
       "Bombana", "Buton", "Buton Selatan", "Buton Tengah", "Buton Utara",
@@ -342,8 +342,8 @@ export const indonesiaLocations = {
   },
   "Maluku": {
     cities: {
-      "Ambon": [],
-      "Tual": []
+      "Ambon": ["Maluku Tengah"],
+      "Tual": ["Kepulauan Aru"]
     },
     regencies: [
       "Buru", "Buru Selatan", "Kepulauan Aru", "Kepulauan Tanimbar",
@@ -353,8 +353,8 @@ export const indonesiaLocations = {
   },
   "Maluku Utara": {
     cities: {
-      "Ternate": [],
-      "Tidore Kepulauan": []
+      "Ternate": ["Halmahera Utara"],
+      "Tidore Kepulauan": ["Halmahera Tengah"]
     },
     regencies: [
       "Halmahera Barat", "Halmahera Selatan", "Halmahera Tengah", "Halmahera Timur",
