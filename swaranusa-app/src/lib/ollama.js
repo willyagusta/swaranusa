@@ -1,7 +1,7 @@
 import { Ollama } from 'ollama';
 
 const ollama = new Ollama({ 
-  host: 'http://localhost:11434' // Default Ollama port
+  host: process.env.OLLAMA_HOST || 'http://localhost:11434' // Configurable Ollama host
 });
 
 export class FeedbackClusteringService {
@@ -280,7 +280,11 @@ export async function analyzeMediaWithAI(base64Data, mimeType, fileName) {
   const isImage = mimeType.startsWith('image/');
   
   try {
-    // Try to use Ollama directly (skip the list check since we know it's running)
+    // Check if Ollama is disabled via environment variable
+    if (process.env.OLLAMA_HOST === 'disabled') {
+      console.log('Ollama disabled via environment variable, using fallback analysis');
+      return generateFallbackAnalysis(fileName, mimeType);
+    }
 
     // Only process images now
     if (!isImage) {

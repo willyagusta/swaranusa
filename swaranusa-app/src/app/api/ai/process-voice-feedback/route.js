@@ -2,11 +2,34 @@ import { NextResponse } from 'next/server';
 import { Ollama } from 'ollama';
 
 const ollama = new Ollama({ 
-  host: 'http://localhost:11434'
+  host: process.env.OLLAMA_HOST || 'http://localhost:11434'
 });
 
 export async function POST(request) {
   try {
+    // Check if Ollama is disabled via environment variable
+    if (process.env.OLLAMA_HOST === 'disabled') {
+      console.log('Ollama disabled via environment variable, using fallback processing');
+      const { transcript } = await request.json();
+      
+      if (!transcript || transcript.trim().length < 10) {
+        return NextResponse.json(
+          { error: 'Transcript too short or empty' },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          title: transcript.substring(0, 60).trim() + (transcript.length > 60 ? '...' : ''),
+          location: 'Tidak disebutkan',
+          content: transcript
+        },
+        warning: 'AI processing disabled, using raw transcript'
+      });
+    }
+
     const { transcript } = await request.json();
 
     if (!transcript || transcript.trim().length < 10) {
@@ -97,6 +120,39 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Voice feedback processing error:', error);
+    
+    // Check if it's a connection error (Ollama not available)
+    if (error.message?.includes('fetch failed') || 
+        error.message?.includes('ECONNREFUSED') || 
+        error.message?.includes('ENOTFOUND')) {
+      console.log('Ollama connection failed, using fallback processing');
+      
+      try {
+        const { transcript } = await request.json();
+        if (!transcript || transcript.trim().length < 10) {
+          return NextResponse.json(
+            { error: 'Transcript too short or empty' },
+            { status: 400 }
+          );
+        }
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            title: transcript.substring(0, 60).trim() + (transcript.length > 60 ? '...' : ''),
+            location: 'Tidak disebutkan',
+            content: transcript
+          },
+          warning: 'AI service unavailable, using raw transcript'
+        });
+      } catch (parseError) {
+        return NextResponse.json(
+          { error: 'Failed to process voice feedback and parse request' },
+          { status: 500 }
+        );
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Failed to process voice feedback' },
       { status: 500 }
