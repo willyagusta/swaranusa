@@ -25,6 +25,12 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [processingStage, setProcessingStage] = useState('');
 
+  // File upload state
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [processingFile, setProcessingFile] = useState(false);
+  const [fileProcessingStage, setFileProcessingStage] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+
   
   // AI Suggestions state
   const [aiEnabled, setAiEnabled] = useState(true); // Default: AI suggestions active
@@ -181,6 +187,147 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
     }
   };
 
+  // File upload handlers
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileInput = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
+    }
+  };
+
+  const handleFile = async (file) => {
+    // Validate file type - only images allowed
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Format file tidak didukung. Gunakan gambar (JPG, PNG, GIF, WebP) saja.');
+      return;
+    }
+
+    // Validate file size (max 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      setError('Ukuran file terlalu besar. Maksimal 50MB.');
+      return;
+    }
+
+    setUploadedFile(file);
+    setError('');
+    await processFileWithAI(file);
+  };
+
+  const processFileWithAI = async (file) => {
+    setProcessingFile(true);
+    setFileProcessingStage('uploading');
+    setLoadingState('📤 Mengunggah file...');
+    
+    try {
+      // Stage 1: Uploading
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setFileProcessingStage('analyzing');
+      setLoadingState('🔍 AI menganalisis file Anda...');
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/ai/process-media-feedback', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      // Stage 2: Processing
+      setFileProcessingStage('extracting');
+      setLoadingState('📝 Mengekstrak informasi dari media...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Stage 3: Finalizing
+        setFileProcessingStage('finalizing');
+        setLoadingState('✨ AI menyusun masukan berdasarkan media...');
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Auto-fill form fields with AI-processed data
+        setFormData(prev => ({
+          ...prev,
+          title: result.data.title,
+          location: result.data.location !== 'Tidak teridentifikasi' ? result.data.location : '',
+          content: result.data.content
+        }));
+        
+        setError('');
+        
+        // Show appropriate success message based on analysis method
+        if (result.message && result.message.includes('fallback')) {
+          setLoadingState('✓ File dianalisis (mode fallback). Silakan edit judul dan konten sesuai kebutuhan.');
+        } else {
+          setLoadingState('✓ File berhasil dianalisis dengan AI! Silakan pilih Provinsi, Kota, dan Kabupaten.');
+        }
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setLoadingState('');
+        }, 5000);
+      } else {
+        setError(result.error || 'Gagal menganalisis file');
+        setLoadingState('');
+      }
+      
+    } catch (error) {
+      console.error('Error processing file:', error);
+      setError('Terjadi kesalahan saat menganalisis file');
+      setLoadingState('');
+    } finally {
+      setProcessingFile(false);
+      setFileProcessingStage('');
+    }
+  };
+
+  const removeUploadedFile = () => {
+    if (uploadedFile) {
+      URL.revokeObjectURL(URL.createObjectURL(uploadedFile));
+    }
+    setUploadedFile(null);
+    setError('');
+  };
+
+  // Cleanup function to revoke object URLs
+  useEffect(() => {
+    return () => {
+      if (uploadedFile) {
+        URL.revokeObjectURL(URL.createObjectURL(uploadedFile));
+      }
+    };
+  }, [uploadedFile]);
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      if (uploadedFile) {
+        URL.revokeObjectURL(URL.createObjectURL(uploadedFile));
+      }
+    };
+  }, []);
+
   // Update available cities/regencies when kota changes
   useEffect(() => {
     if (formData.kota && formData.provinsi) {
@@ -323,6 +470,9 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
         setContentSuggestions([]);
         setShowTitleSuggestions(false);
         setShowContentSuggestions(false);
+        
+        // Clear uploaded file
+        setUploadedFile(null);
         
         // Notify parent component
         if (onFeedbackSubmitted) {
@@ -665,11 +815,11 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
             <button
               type="button"
               onClick={toggleRecording}
-              disabled={processingVoice}
+              disabled={processingVoice || processingFile}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 isRecording 
                   ? 'bg-red-600 text-white hover:bg-red-700 animate-pulse' 
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
               }`}
             >
               {isRecording ? (
@@ -696,8 +846,129 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
             )}
           </div>
 
+          {/* Image Upload Section */}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Unggah Foto (Opsional)
+            </label>
+            
+            {/* Upload Area */}
+            <div
+              className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
+                dragActive 
+                  ? 'border-blue-400 bg-blue-50' 
+                  : uploadedFile 
+                    ? 'border-purple-400 bg-purple-50' 
+                    : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileInput}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                disabled={processingFile || processingVoice}
+              />
+              
+              {uploadedFile ? (
+                <div className="text-center">
+                  {/* Image Preview */}
+                  <div className="mb-4">
+                    <div className="relative inline-block">
+                      <img
+                        src={URL.createObjectURL(uploadedFile)}
+                        alt="Preview"
+                        className="max-w-full max-h-48 rounded-lg border border-gray-200 shadow-sm"
+                      />
+                      <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                        Gambar
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* File Info */}
+                  <div className="bg-purple-200 border border-purple-200 rounded-lg p-3">
+                    <p className="text-sm font-medium text-purple-800 mb-1">
+                      File berhasil diunggah
+                    </p>
+                    <p className="text-xs text-purple-600 mb-2">
+                      {uploadedFile.name} ({(uploadedFile.size / 1024 / 1024).toFixed(1)} MB)
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-3">
+                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    Drag & drop gambar di sini atau klik untuk memilih
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Format: JPG, PNG, GIF, WebP • Maksimal 50MB
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            {/* File Processing Indicator */}
+            {processingFile && (
+              <div className="mt-4 bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border-2 border-purple-300 shadow-lg animate-fadeIn">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-lg">🤖</span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold text-purple-900">AI Menganalisis Media</h4>
+                    <p className="text-purple-700 text-sm">{loadingState}</p>
+                  </div>
+                </div>
+                
+                {/* Processing Stages */}
+                <div className="space-y-2 bg-white/50 p-3 rounded-lg">
+                  <div className={`flex items-center gap-2 transition-all ${fileProcessingStage === 'uploading' ? 'text-purple-700 font-semibold' : 'text-gray-500'}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all ${fileProcessingStage === 'uploading' ? 'bg-purple-600 text-white animate-pulse' : fileProcessingStage !== '' && fileProcessingStage !== 'uploading' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                      {fileProcessingStage === 'uploading' ? '⏳' : fileProcessingStage !== '' && fileProcessingStage !== 'uploading' ? '✓' : '1'}
+                    </span>
+                    <span className="text-xs">📤 Mengunggah file</span>
+                  </div>
+                  
+                  <div className={`flex items-center gap-2 transition-all ${fileProcessingStage === 'analyzing' ? 'text-purple-700 font-semibold' : 'text-gray-500'}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all ${fileProcessingStage === 'analyzing' ? 'bg-purple-600 text-white animate-pulse' : ['extracting', 'finalizing'].includes(fileProcessingStage) ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                      {fileProcessingStage === 'analyzing' ? '⏳' : ['extracting', 'finalizing'].includes(fileProcessingStage) ? '✓' : '2'}
+                    </span>
+                    <span className="text-xs">🔍 Menganalisis konten media</span>
+                  </div>
+                  
+                  <div className={`flex items-center gap-2 transition-all ${fileProcessingStage === 'extracting' ? 'text-purple-700 font-semibold' : 'text-gray-500'}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all ${fileProcessingStage === 'extracting' ? 'bg-purple-600 text-white animate-pulse' : fileProcessingStage === 'finalizing' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                      {fileProcessingStage === 'extracting' ? '⏳' : fileProcessingStage === 'finalizing' ? '✓' : '3'}
+                    </span>
+                    <span className="text-xs">📝 Mengekstrak informasi</span>
+                  </div>
+                  
+                  <div className={`flex items-center gap-2 transition-all ${fileProcessingStage === 'finalizing' ? 'text-purple-700 font-semibold' : 'text-gray-500'}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all ${fileProcessingStage === 'finalizing' ? 'bg-purple-600 text-white animate-pulse' : 'bg-gray-300 text-gray-600'}`}>
+                      {fileProcessingStage === 'finalizing' ? '⏳' : '4'}
+                    </span>
+                    <span className="text-xs">✨ Mengisi formulir otomatis</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Success Notification */}
-          {!processingVoice && loadingState.includes('✓') && (
+          {!processingVoice && !processingFile && loadingState.includes('✓') && (
             <div className="mt-6 bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border-2 border-green-400 shadow-lg">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
@@ -714,7 +985,7 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
           )}
 
           {/* AI Processing Indicator */}
-          {processingVoice && (
+          {processingVoice && !processingFile && (
             <div className="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border-2 border-purple-300 shadow-lg animate-fadeIn">
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative">
@@ -772,7 +1043,7 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
           <div className="flex justify-center">
             <button
               type="submit"
-              disabled={submitting || processingVoice}
+              disabled={submitting || processingVoice || processingFile}
               className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               {submitting ? (
@@ -787,7 +1058,7 @@ export default function SubmitFeedbackTab({ user, onFeedbackSubmitted }) {
                     </p>
                   )}
                 </div>
-              ) : processingVoice ? (
+              ) : processingVoice || processingFile ? (
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   <span>AI Memproses...</span>

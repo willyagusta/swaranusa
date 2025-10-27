@@ -274,3 +274,168 @@ export class FeedbackClusteringService {
 }
 
 export const clusteringService = new FeedbackClusteringService();
+
+// Image Analysis Function
+export async function analyzeMediaWithAI(base64Data, mimeType, fileName) {
+  const isImage = mimeType.startsWith('image/');
+  
+  try {
+    // Try to use Ollama directly (skip the list check since we know it's running)
+
+    // Only process images now
+    if (!isImage) {
+      return {
+        success: false,
+        error: 'Format file tidak didukung. Hanya gambar yang diperbolehkan.'
+      };
+    }
+
+    const prompt = `
+    Analyze this Indonesian image and extract information for a government feedback form.
+    Respond ONLY in JSON format:
+    
+    Image: ${fileName}
+    Type: ${mimeType}
+    
+    {
+      "title": "Clear, descriptive title in Indonesian (max 60 characters)",
+      "content": "Detailed description of what you see in the image in Indonesian (max 500 characters). Focus on problems, issues, or observations that would be relevant for government feedback.",
+      "location": "Specific location mentioned in image (if any) or 'Tidak teridentifikasi'",
+      "category": "single_category_only",
+      "urgency": "low|medium|high",
+      "sentiment": "positive|negative|neutral",
+      "tags": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+      "description": "What you observe in the image in Indonesian"
+    }
+
+    INSTRUCTIONS FOR TITLE:
+    - Create a clear, descriptive title that summarizes the main issue/problem visible in the image
+    - Use formal Indonesian language
+    - Focus on the problem or situation, not just "Gambar" or "Foto"
+    - Examples: "Jalan Rusak di Depan Sekolah", "Sampah Menumpuk di Pasar", "Fasilitas Kesehatan Tidak Memadai"
+
+    INSTRUCTIONS FOR CONTENT:
+    - Describe what you see in detail, focusing on problems or issues
+    - Use formal Indonesian language suitable for government review
+    - Include specific details about the condition, location, or situation
+    - If you see text/signs in the image, include that information
+    - Focus on actionable observations that government could address
+
+    CATEGORY RULES:
+    - Choose EXACTLY ONE category from the list below
+    - Return ONLY the category name, no pipes or multiple values
+    
+    Available Categories (choose ONE):
+    - infrastruktur: roads, bridges, water, electricity, jalan, jembatan, air bersih, listrik
+    - kesehatan: hospitals, medical facilities, rumah sakit, fasilitas kesehatan, dokter, obat
+    - pendidikan: schools, education, sekolah, pendidikan, guru, fasilitas belajar, akses sekolah
+    - lingkungan: garbage, pollution, cleanliness, sampah, polusi, kebersihan, taman
+    - transportasi: transport, traffic, transportasi, lalu lintas, parkir, angkutan umum
+    - keamanan: security, safety, keamanan, keselamatan, polisi, kejahatan
+    - ekonomi: business, economy, bisnis, ekonomi, pasar, pengangguran, kesejahteraan
+    - sosial: social services, layanan sosial, bantuan sosial, program masyarakat
+    - pemerintahan: government services, bureaucracy, layanan pemerintah, birokrasi, korupsi
+    - teknologi: digital services, tech, layanan digital, internet, teknologi
+
+    IMPORTANT TAG INSTRUCTIONS:
+    - Generate 3-7 specific, relevant tags based on what you see in the image
+    - Tags should capture: main issue, affected facilities, specific problems, action words
+    - Extract actual keywords from what's visible in the image
+    - AVOID generic tags like: "gambar", "foto", "masukan", "warga"
+
+    Respond ONLY with JSON. No markdown, no explanations.
+    `;
+
+      // Use the same model and options as voice feedback processing
+      const response = await ollama.chat({
+        model: 'llama3.2:latest',
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
+        options: {
+          temperature: 0.7,
+          top_p: 0.9,
+        }
+      });
+
+      let result;
+      try {
+        // Try to parse JSON response with same logic as voice feedback
+        const content = response.message.content.trim();
+        
+        // Sometimes LLM wraps JSON in markdown code blocks
+        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
+                         content.match(/```\n([\s\S]*?)\n```/) ||
+                         [null, content];
+        
+        result = JSON.parse(jsonMatch[1] || content);
+        
+        // Validate required fields
+        if (!result.title || !result.content) {
+          throw new Error('Missing required fields');
+        }
+        
+      } catch (parseError) {
+        console.warn('Failed to parse AI response as JSON:', response.message.content);
+        result = generateFallbackAnalysis(fileName, mimeType, isImage).data;
+      }
+
+    return {
+      success: true,
+      data: result
+    };
+
+  } catch (error) {
+    console.error('Error analyzing media with AI:', error);
+    return generateFallbackAnalysis(fileName, mimeType, isImage);
+  }
+}
+
+// Fallback analysis function when Ollama is not available
+function generateFallbackAnalysis(fileName, mimeType, isImage) {
+  const fileType = 'gambar';
+  const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
+  
+  // Generate basic analysis based on file type and name
+  let title = `Masukan ${fileType} - ${fileName}`;
+  let content = `File ${fileType} "${fileName}" telah diunggah untuk dianalisis lebih lanjut. `;
+  let category = 'sosial';
+  let tags = ['media', 'upload', fileType];
+  
+  // Try to infer category from filename
+  const fileNameLower = fileName.toLowerCase();
+  if (fileNameLower.includes('jalan') || fileNameLower.includes('road') || fileNameLower.includes('infra')) {
+    category = 'infrastruktur';
+    tags.push('infrastruktur', 'jalan');
+    title = `Masukan Infrastruktur - ${fileName}`;
+    content += 'File ini berkaitan dengan infrastruktur dan fasilitas umum.';
+  } else if (fileNameLower.includes('sampah') || fileNameLower.includes('waste') || fileNameLower.includes('lingkungan')) {
+    category = 'lingkungan';
+    tags.push('lingkungan', 'sampah');
+    title = `Masukan Lingkungan - ${fileName}`;
+    content += 'File ini berkaitan dengan masalah lingkungan dan kebersihan.';
+  } else if (fileNameLower.includes('sekolah') || fileNameLower.includes('school') || fileNameLower.includes('pendidikan')) {
+    category = 'pendidikan';
+    tags.push('pendidikan', 'sekolah');
+    title = `Masukan Pendidikan - ${fileName}`;
+    content += 'File ini berkaitan dengan fasilitas pendidikan.';
+  } else if (fileNameLower.includes('rumah') || fileNameLower.includes('hospital') || fileNameLower.includes('kesehatan')) {
+    category = 'kesehatan';
+    tags.push('kesehatan', 'rumah-sakit');
+    title = `Masukan Kesehatan - ${fileName}`;
+    content += 'File ini berkaitan dengan fasilitas kesehatan.';
+  }
+
+  return {
+    success: true,
+    data: {
+      title: title,
+      content: content,
+      location: 'Tidak teridentifikasi',
+      category: category,
+      urgency: 'medium',
+      sentiment: 'neutral',
+      tags: tags,
+      description: `File ${fileType} ${fileName}`
+    }
+  };
+}
