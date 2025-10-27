@@ -36,7 +36,12 @@ export default function FeedbackCard({ feedback, formatDate }) {
         {/* Location and Category */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-gray-600 px-2 py-1 rounded-full text-xs font-medium bg-gray-50 flex-shrink-0">
-            📍 <span className="hidden xs:inline">{feedback.location || "Tidak Ada Lokasi"}</span>
+            📍 <span className="hidden xs:inline">
+              {feedback.kota && feedback.kabupaten 
+                ? `${feedback.kota}, ${feedback.kabupaten}` 
+                : feedback.kota || feedback.kabupaten || feedback.location || 'Tidak disebutkan'
+              }
+            </span>
             <span className="xs:hidden">Lokasi</span>
           </span>
           <span className="text-gray-600 px-2 py-1 rounded-full text-xs font-medium bg-gray-50 flex-shrink-0">
@@ -80,7 +85,12 @@ export default function FeedbackCard({ feedback, formatDate }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 text-sm">
               <div className="bg-gray-50 p-3 rounded-lg">
                 <span className="font-medium text-gray-700 block">Lokasi:</span>
-                <p className="text-gray-600 capitalize mt-1">{feedback.location}</p>
+                <p className="text-gray-600 capitalize mt-1">
+                  {feedback.kota && feedback.kabupaten 
+                    ? `${feedback.kota}, ${feedback.kabupaten}` 
+                    : feedback.kota || feedback.kabupaten || feedback.location || 'Tidak disebutkan'
+                  }
+                </p>
               </div>
               <div className="bg-gray-50 p-3 rounded-lg">
                 <span className="font-medium text-gray-700 block">Kategori:</span>

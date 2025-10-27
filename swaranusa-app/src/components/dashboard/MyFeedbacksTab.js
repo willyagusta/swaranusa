@@ -102,7 +102,12 @@ export default function MyFeedbacksTab({ user, refreshTrigger }) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
                 <div>
                   <span className="font-medium text-gray-700">Lokasi:</span>
-                  <p className="text-gray-600 capitalize">{feedback.location}</p>
+                  <p className="text-gray-600 capitalize">
+                    {feedback.kota && feedback.kabupaten 
+                      ? `${feedback.kota}, ${feedback.kabupaten}` 
+                      : feedback.kota || feedback.kabupaten || feedback.location || 'Tidak disebutkan'
+                    }
+                  </p>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Kategori:</span>

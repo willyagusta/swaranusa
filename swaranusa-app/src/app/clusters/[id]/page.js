@@ -243,7 +243,10 @@ export default function ClusterDetailPage() {
                       <span className="font-medium">Kategori:</span> {feedback.category}
                     </div>
                     <div>
-                      <span className="font-medium">Lokasi:</span> {feedback.location}
+                      <span className="font-medium">Lokasi:</span> {feedback.kota && feedback.kabupaten 
+                        ? `${feedback.kota}, ${feedback.kabupaten}` 
+                        : feedback.kota || feedback.kabupaten || feedback.location || 'Tidak disebutkan'
+                      }
                     </div>
                     <div>
                       <span className="font-medium">Pengirim:</span> {feedback.userName || 'Anonim'}

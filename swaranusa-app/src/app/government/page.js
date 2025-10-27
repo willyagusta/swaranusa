@@ -756,7 +756,10 @@ function GovernmentContent() {
                           <h3 className="font-semibold text-lg">{feedback.title}</h3>
                           <p className="text-gray-600 mt-1">{feedback.content}</p>
                           <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                            <span>📍 {feedback.location}</span>
+                            <span>📍 {feedback.kota && feedback.kabupaten 
+                              ? `${feedback.kota}, ${feedback.kabupaten}` 
+                              : feedback.kota || feedback.kabupaten || feedback.location || 'Tidak disebutkan'
+                            }</span>
                             <span>📂 {feedback.category}</span>
                             <span>👤 {feedback.submitter_first_name} {feedback.submitter_last_name}</span>
                             <span>📅 {formatDate(feedback.created_at)}</span>
@@ -890,7 +893,12 @@ function GovernmentContent() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-semibold">Lokasi:</span>
-                    <p className="text-gray-600">{selectedFeedback.location}</p>
+                    <p className="text-gray-600">
+                      {selectedFeedback.kota && selectedFeedback.kabupaten 
+                        ? `${selectedFeedback.kota}, ${selectedFeedback.kabupaten}` 
+                        : selectedFeedback.kota || selectedFeedback.kabupaten || selectedFeedback.location || 'Tidak disebutkan'
+                      }
+                    </p>
                   </div>
                   <div>
                     <span className="font-semibold">Kategori:</span>
