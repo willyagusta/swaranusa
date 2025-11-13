@@ -61,11 +61,13 @@ function TypingAnimation() {
 export default function Home() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('signin');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
 
   const openAuthModal = (mode) => {
     setAuthMode(mode);
     setAuthModalOpen(true);
+    setMobileMenuOpen(false); // Close mobile menu when opening auth modal
   };
 
   // Intersection Observer for scroll animations
@@ -108,6 +110,8 @@ export default function Home() {
                 </div>
               </div>
             </div>
+            
+            {/* Desktop Navigation */}
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-8">
                 <a href="#fitur" className="text-gray-600 hover:text-red-600 transition-colors font-medium">FITUR</a>
@@ -115,25 +119,27 @@ export default function Home() {
                 <a href="#dampak" className="text-gray-600 hover:text-red-600 transition-colors font-medium">DAMPAK</a>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-                {user ? (
-              <>
-                {user.role === "citizen" && (
-                  <Link 
-                    href="/dashboard" 
-                    className="text-gray-600 hover:text-red-600 transition-colors font-medium"
-                  >
-                    Dashboard
-                  </Link>
-                )}
-                {user.role === "government" && (
-                  <Link 
-                    href="/government" 
-                    className="text-gray-600 hover:text-red-600 transition-colors font-medium"
-                  >
-                    Laporan Warga
-                  </Link>
-                )}
+            
+            {/* Desktop User Actions */}
+            <div className="hidden md:flex items-center space-x-4">
+              {user ? (
+                <>
+                  {user.role === "citizen" && (
+                    <Link 
+                      href="/dashboard" 
+                      className="text-gray-600 hover:text-red-600 transition-colors font-medium"
+                    >
+                      Dashboard
+                    </Link>
+                  )}
+                  {user.role === "government" && (
+                    <Link 
+                      href="/government" 
+                      className="text-gray-600 hover:text-red-600 transition-colors font-medium"
+                    >
+                      Laporan Warga
+                    </Link>
+                  )}
                   <span className="text-gray-600 font-medium">
                     {user.firstName} {user.lastName}
                   </span>
@@ -145,18 +151,121 @@ export default function Home() {
                   </button>
                 </>
               ) : (
-                <>
-                  <button 
-                    onClick={() => openAuthModal('signup')}
-                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
-                  >
-                    Masuk
-                  </button>
-                </>
+                <button 
+                  onClick={() => openAuthModal('signup')}
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
+                >
+                  Masuk
+                </button>
               )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-md text-gray-600 hover:text-red-600 hover:bg-gray-100 transition-colors"
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <>
+            {/* Overlay */}
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            
+            {/* Mobile Menu */}
+            <div className="absolute top-16 left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50 md:hidden">
+              <div className="px-4 py-4 space-y-4">
+                {/* Navigation Links */}
+                <div className="space-y-3 border-b border-gray-200 pb-4">
+                  <a 
+                    href="#fitur" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-gray-600 hover:text-red-600 transition-colors font-medium py-2"
+                  >
+                    FITUR
+                  </a>
+                  <a 
+                    href="#cara-kerja" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-gray-600 hover:text-red-600 transition-colors font-medium py-2"
+                  >
+                    CARA KERJA
+                  </a>
+                  <a 
+                    href="#dampak" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-gray-600 hover:text-red-600 transition-colors font-medium py-2"
+                  >
+                    DAMPAK
+                  </a>
+                </div>
+
+                {/* User Actions */}
+                <div className="space-y-3 pt-2">
+                  {user ? (
+                    <>
+                      {user.role === "citizen" && (
+                        <Link 
+                          href="/dashboard" 
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block text-gray-600 hover:text-red-600 transition-colors font-medium py-2"
+                        >
+                          Dashboard
+                        </Link>
+                      )}
+                      {user.role === "government" && (
+                        <Link 
+                          href="/government" 
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block text-gray-600 hover:text-red-600 transition-colors font-medium py-2"
+                        >
+                          Laporan Warga
+                        </Link>
+                      )}
+                      <div className="text-gray-600 font-medium py-2 border-t border-gray-200 pt-3">
+                        {user.firstName} {user.lastName}
+                      </div>
+                      <button 
+                        onClick={() => {
+                          signOut();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="block w-full text-left text-gray-600 hover:text-red-600 transition-colors font-medium py-2"
+                      >
+                        Keluar
+                      </button>
+                    </>
+                  ) : (
+                    <button 
+                      onClick={() => openAuthModal('signup')}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300"
+                    >
+                      Masuk
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </nav>
 
       {/* Hero Section  */}

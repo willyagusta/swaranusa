@@ -737,11 +737,11 @@ function GovernmentContent() {
         {/* Feedbacks Tab */}
         {activeTab === 'feedbacks' && (
           <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-bold">Semua Feedback Warga</h2>
-              <p className="text-gray-600">Kelola dan ubah status feedback</p>
+            <div className="p-4 sm:p-6 border-b">
+              <h2 className="text-lg sm:text-xl font-bold">Semua Feedback Warga</h2>
+              <p className="text-sm sm:text-base text-gray-600">Kelola dan ubah status feedback</p>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {loading_feedbacks ? (
                 <div className="text-center py-8">
                   <div className="w-8 h-8 border-4 border-purple-300 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -750,28 +750,28 @@ function GovernmentContent() {
               ) : feedbacks.length > 0 ? (
                 <div className="space-y-4">
                   {feedbacks.map((feedback) => (
-                    <div key={feedback.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{feedback.title}</h3>
-                          <p className="text-gray-600 mt-1">{feedback.content}</p>
-                          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                            <span>📍 {feedback.kota && feedback.kabupaten 
+                    <div key={feedback.id} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0 mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-base sm:text-lg break-words">{feedback.title}</h3>
+                          <p className="text-sm sm:text-base text-gray-600 mt-1 break-words">{feedback.content}</p>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0 mt-2 text-xs sm:text-sm text-gray-500">
+                            <span className="break-words">📍 {feedback.kota && feedback.kabupaten 
                               ? `${feedback.kota}, ${feedback.kabupaten}` 
                               : feedback.kota || feedback.kabupaten || feedback.location || 'Tidak disebutkan'
                             }</span>
                             <span>📂 {feedback.category}</span>
-                            <span>👤 {feedback.submitter_first_name} {feedback.submitter_last_name}</span>
+                            <span className="break-words">👤 {feedback.submitter_first_name} {feedback.submitter_last_name}</span>
                             <span>📅 {formatDate(feedback.created_at)}</span>
                           </div>
                         </div>
-                        <div className="ml-4 flex flex-col items-end space-y-2">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(feedback.status)}`}>
+                        <div className="flex flex-row sm:flex-col sm:items-end sm:space-y-2 space-x-2 sm:space-x-0 sm:ml-4">
+                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${getStatusColor(feedback.status)}`}>
                             {getStatusLabel(feedback.status)}
                           </span>
                           <button
                             onClick={() => viewFeedback(feedback.id)}
-                            className="text-blue-600 hover:text-blue-800 text-sm underline"
+                            className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm underline whitespace-nowrap"
                           >
                             Lihat Detail
                           </button>
@@ -792,36 +792,36 @@ function GovernmentContent() {
         {/* Reports Tab */}
         {activeTab === 'reports' && (
           <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-bold">Laporan yang Dibuat</h2>
-              <p className="text-gray-600">Laporan pemerintah yang dikompilasi AI</p>
+            <div className="p-4 sm:p-6 border-b">
+              <h2 className="text-lg sm:text-xl font-bold">Laporan yang Dibuat</h2>
+              <p className="text-sm sm:text-base text-gray-600">Laporan pemerintah yang dikompilasi AI</p>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {reports.length > 0 ? (
                 <div className="space-y-4">
                   {reports.map((report) => (
-                    <div key={report.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{report.title}</h3>
-                          <p className="text-sm text-gray-600 mt-1">
+                    <div key={report.id} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-base sm:text-lg break-words">{report.title}</h3>
+                          <p className="text-xs sm:text-sm text-gray-600 mt-1">
                             {report.total_feedbacks} feedback dianalisis
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 mt-1">
                             Dibuat pada {formatDate(report.created_at)}
                           </p>
                         </div>
-                        <div className="ml-4 flex flex-col space-y-2">
-                          <div className="flex space-x-2">
+                        <div className="flex flex-col space-y-2 sm:ml-4 w-full sm:w-auto">
+                          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                             <button
                               onClick={() => viewReport(report)}
-                              className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                              className="bg-red-500 text-white px-3 py-2 sm:py-1 rounded text-sm hover:bg-red-600 w-full sm:w-auto"
                             >
                               Lihat Laporan
                             </button>
                             <button
                               onClick={() => downloadReportAsPDF(report)}
-                              className="bg-white border-red-600 border text-red-600 px-3 py-1 rounded text-sm hover:text-red-700 hover:border-red-700"
+                              className="bg-white border-red-600 border text-red-600 px-3 py-2 sm:py-1 rounded text-sm hover:text-red-700 hover:border-red-700 w-full sm:w-auto"
                             >
                               Download PDF
                             </button>
@@ -833,7 +833,7 @@ function GovernmentContent() {
                               <button
                                 key={status}
                                 onClick={() => updateReportFeedbackStatus(report.id, status)}
-                                className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(status)} hover:opacity-80`}
+                                className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(status)} hover:opacity-80 whitespace-nowrap`}
                               >
                                 → {getStatusLabel(status)}
                               </button>
@@ -867,33 +867,33 @@ function GovernmentContent() {
 
       {/* Feedback Detail Modal */}
       {selectedFeedback && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-hidden flex flex-col">
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-900">{selectedFeedback.title}</h2>
+            <div className="p-4 sm:p-6 border-b">
+              <div className="flex justify-between items-start gap-2">
+                <h2 className="text-lg sm:text-2xl font-bold text-gray-900 break-words flex-1 pr-2">{selectedFeedback.title}</h2>
                 <button
                   onClick={() => setSelectedFeedback(null)}
-                  className="text-gray-400 hover:text-gray-600 p-2"
+                  className="text-gray-400 hover:text-gray-600 p-2 flex-shrink-0"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="font-semibold mb-2">Konten Feedback:</h3>
-                  <p className="text-gray-700">{selectedFeedback.content}</p>
+                  <h3 className="font-semibold mb-2 text-sm sm:text-base">Konten Feedback:</h3>
+                  <p className="text-sm sm:text-base text-gray-700 break-words">{selectedFeedback.content}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                   <div>
                     <span className="font-semibold">Lokasi:</span>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 break-words">
                       {selectedFeedback.kota && selectedFeedback.kabupaten 
                         ? `${selectedFeedback.kota}, ${selectedFeedback.kabupaten}` 
                         : selectedFeedback.kota || selectedFeedback.kabupaten || selectedFeedback.location || 'Tidak disebutkan'
@@ -910,12 +910,12 @@ function GovernmentContent() {
                   </div>
                   <div>
                     <span className="font-semibold">Dikirim:</span>
-                    <p className="text-gray-600">{formatDateTime(selectedFeedback.created_at)}</p>
+                    <p className="text-gray-600 break-words">{formatDateTime(selectedFeedback.created_at)}</p>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-4">Kelola Status:</h3>
+                  <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Kelola Status:</h3>
                   <FeedbackStatusManager
                     feedbackId={selectedFeedback.id}
                     currentStatus={selectedFeedback.status}
@@ -940,61 +940,61 @@ function GovernmentContent() {
 
       {/* Report Preview Modal */}
       {selectedReport && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
           <div className="bg-white rounded-lg max-w-5xl w-full max-h-screen overflow-hidden flex flex-col">
-            <div className="p-6 border-b bg-gray-50">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                  <img src="/logosquare.png" alt="Logo Swaranusa" className="h-12 w-max" />
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedReport.title}</h2>
-                    <p className="text-gray-600 mt-1">
+            <div className="p-4 sm:p-6 border-b bg-gray-50">
+              <div className="flex justify-between items-start gap-2">
+                <div className="flex items-start sm:items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+                  <img src="/logosquare.png" alt="Logo Swaranusa" className="h-8 sm:h-12 w-auto flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-lg sm:text-2xl font-bold text-gray-900 break-words">{selectedReport.title}</h2>
+                    <p className="text-xs sm:text-base text-gray-600 mt-1 break-words">
                       {selectedReport.category} • {selectedReport.location} • {selectedReport.total_feedbacks} feedback
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedReport(null)}
-                  className="text-gray-400 hover:text-gray-600 p-2"
+                  className="text-gray-400 hover:text-gray-600 p-2 flex-shrink-0"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="prose max-w-none">
-                <h3><strong>RINGKASAN LAPORAN</strong></h3>
-                <div dangerouslySetInnerHTML={{ __html: selectedReport.executive_summary }} />
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="prose prose-sm sm:prose max-w-none">
+                <h3 className="text-base sm:text-lg"><strong>RINGKASAN LAPORAN</strong></h3>
+                <div className="text-sm sm:text-base" dangerouslySetInnerHTML={{ __html: selectedReport.executive_summary }} />
                 
-                <div className="my-8"></div>
+                <div className="my-6 sm:my-8"></div>
                 
-                <h3><strong>LAPORAN LENGKAP</strong></h3>
-                <div dangerouslySetInnerHTML={{ __html: selectedReport.report_content }} />
+                <h3 className="text-base sm:text-lg"><strong>LAPORAN LENGKAP</strong></h3>
+                <div className="text-sm sm:text-base" dangerouslySetInnerHTML={{ __html: selectedReport.report_content }} />
 
                 {/* Recommendations Section */}
-                <div className="my-8"></div>
-                <h3><strong>REKOMENDASI</strong></h3>
+                <div className="my-6 sm:my-8"></div>
+                <h3 className="text-base sm:text-lg"><strong>REKOMENDASI</strong></h3>
                 {(() => {
                   let recs = selectedReport.recommendations;
                   if (!Array.isArray(recs)) {
                     recs = safeJSONParse(recs, []);
                   }
                   if (!recs || recs.length === 0) {
-                    return <p className="text-gray-600">Tidak ada rekomendasi</p>;
+                    return <p className="text-sm sm:text-base text-gray-600">Tidak ada rekomendasi</p>;
                   }
                   return (
-                    <ol className="list-decimal ml-6 space-y-3">
+                    <ol className="list-decimal ml-4 sm:ml-6 space-y-2 sm:space-y-3">
                       {recs.map((rec, idx) => (
-                        <li key={idx}>
-                          <p className="font-semibold">{rec.recommendation || rec}</p>
+                        <li key={idx} className="text-sm sm:text-base">
+                          <p className="font-semibold break-words">{rec.recommendation || rec}</p>
                           {(rec.priority || rec.timeline || rec.department || rec.budget_estimate || rec.success_indicators) && (
-                            <div className="text-sm text-gray-700 mt-1 space-y-1">
-                              {rec.priority && (<p><span className="font-medium">Prioritas:</span> {rec.priority}</p>)}
-                              {rec.timeline && (<p><span className="font-medium">Timeline:</span> {rec.timeline}</p>)}
-                              {rec.department && (<p><span className="font-medium">Departemen:</span> {rec.department}</p>)}
-                              {rec.success_indicators && (<p><span className="font-medium">Indikator Keberhasilan:</span> {rec.success_indicators}</p>)}
+                            <div className="text-xs sm:text-sm text-gray-700 mt-1 space-y-1">
+                              {rec.priority && (<p className="break-words"><span className="font-medium">Prioritas:</span> {rec.priority}</p>)}
+                              {rec.timeline && (<p className="break-words"><span className="font-medium">Timeline:</span> {rec.timeline}</p>)}
+                              {rec.department && (<p className="break-words"><span className="font-medium">Departemen:</span> {rec.department}</p>)}
+                              {rec.success_indicators && (<p className="break-words"><span className="font-medium">Indikator Keberhasilan:</span> {rec.success_indicators}</p>)}
                             </div>
                           )}
                         </li>
