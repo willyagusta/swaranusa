@@ -39,38 +39,38 @@ export default function VerifyTab({ initialHash = '' }) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
           Verifikasi Blockchain
         </h2>
-        <p className="text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600">
           Masukkan hash transaksi untuk memverifikasi bahwa masukan telah tercatat secara permanen di blockchain.
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-lg">
+      <div className="bg-white rounded-2xl p-4 sm:p-8 border border-gray-100 shadow-lg">
         <div className="mb-6">
           <label htmlFor="hash" className="block text-sm font-medium text-gray-700 mb-2">
             Hash Transaksi
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               id="hash"
               value={inputHash}
               onChange={(e) => setInputHash(e.target.value)}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm sm:text-base"
               placeholder="0x..."
               disabled={loading}
             />
             <button
               onClick={() => handleVerify(inputHash)}
               disabled={loading || !inputHash}
-              className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-red-600 hover:bg-red-700 text-white px-4 sm:px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto whitespace-nowrap"
             >
               {loading ? (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   <span>Verifying...</span>
                 </div>
@@ -98,10 +98,10 @@ export default function VerifyTab({ initialHash = '' }) {
                   <h3 className="text-xl font-bold text-green-800">Terverifikasi di Blockchain</h3>
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="grid md:grid-cols-2 gap-4 text-xs sm:text-sm">
                   <div>
                     <span className="font-semibold text-gray-700">Hash Transaksi:</span>
-                    <p className="text-gray-600 break-all">{verificationData.transactionHash}</p>
+                    <p className="text-gray-600 break-all mt-1">{verificationData.transactionHash}</p>
                   </div>
                   
                   {verificationData.blockchainData?.blockNumber && (
