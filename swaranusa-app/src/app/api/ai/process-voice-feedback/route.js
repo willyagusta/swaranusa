@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
-import { Ollama } from 'ollama';
+import Anthropic from '@anthropic-ai/sdk';
 
-const ollama = new Ollama({ 
-  host: process.env.OLLAMA_HOST || 'http://localhost:11434'
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || ''
 });
 
 export async function POST(request) {
   try {
-    // Check if Ollama is disabled via environment variable
-    if (process.env.OLLAMA_HOST === 'disabled') {
-      console.log('Ollama disabled via environment variable, using fallback processing');
+    // Check if Claude API key is not set
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.log('Claude API key not set, using fallback processing');
       const { transcript } = await request.json();
       
       if (!transcript || transcript.trim().length < 10) {
@@ -39,7 +39,7 @@ export async function POST(request) {
       );
     }
 
-    // Use Llama to process voice transcript
+    // Use Claude to process voice transcript
     const prompt = `
     Kamu adalah asisten AI yang membantu warga menyampaikan masukan kepada pemerintah.
 
@@ -67,20 +67,21 @@ export async function POST(request) {
 
     Respond ONLY with valid JSON.`;
 
-    const response = await ollama.chat({
-      model: 'llama3.2:latest',
-      messages: [{ role: 'user', content: prompt }],
-      stream: false,
-      options: {
-        temperature: 0.7,
-        top_p: 0.9,
-      }
+    const response = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 1024,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
     });
 
     let result;
     try {
       // Try to parse JSON response
-      const content = response.message.content.trim();
+      const content = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
       
       // Sometimes LLM wraps JSON in markdown code blocks
       const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
@@ -95,7 +96,7 @@ export async function POST(request) {
       }
       
     } catch (parseError) {
-      console.error('Failed to parse AI response:', response.message.content);
+      console.error('Failed to parse AI response:', response.content);
       
       // Fallback: Use transcript as-is
       return NextResponse.json({
@@ -121,11 +122,9 @@ export async function POST(request) {
   } catch (error) {
     console.error('Voice feedback processing error:', error);
     
-    // Check if it's a connection error (Ollama not available)
-    if (error.message?.includes('fetch failed') || 
-        error.message?.includes('ECONNREFUSED') || 
-        error.message?.includes('ENOTFOUND')) {
-      console.log('Ollama connection failed, using fallback processing');
+    // Check if it's an API error
+    if (error.status === 401 || error.message?.includes('api_key')) {
+      console.log('Claude API authentication failed, using fallback processing');
       
       try {
         const { transcript } = await request.json();

@@ -32,7 +32,7 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    // OPTIMIZATION 1: Process feedback with Ollama
+    // OPTIMIZATION 1: Process feedback with Claude AI
     const locationData = { provinsi, kota, kabupaten, location };
     const processed = await clusteringService.processFeedback(content, locationData);
 

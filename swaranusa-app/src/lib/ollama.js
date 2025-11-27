@@ -1,12 +1,12 @@
-import { Ollama } from 'ollama';
+import Anthropic from '@anthropic-ai/sdk';
 
-const ollama = new Ollama({ 
-  host: process.env.OLLAMA_HOST || 'http://localhost:11434' // Configurable Ollama host
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || ''
 });
 
 export class FeedbackClusteringService {
   constructor() {
-    this.model = 'llama3.2:latest';
+    this.model = 'claude-3-5-sonnet-20241022';
   }
 
   async processFeedback(feedbackText, locationData = {}) {
@@ -67,17 +67,23 @@ export class FeedbackClusteringService {
       Respond ONLY with JSON. No markdown, no explanations.
       `;
 
-      const response = await ollama.chat({
+      const response = await anthropic.messages.create({
         model: this.model,
-        messages: [{ role: 'user', content: prompt }],
-        stream: false,
+        max_tokens: 2048,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
       });
 
       let result;
       try {
-        result = JSON.parse(response.message.content);
+        const content = response.content[0].type === 'text' ? response.content[0].text : '';
+        result = JSON.parse(content);
       } catch (parseError) {
-        console.warn('Failed to parse AI response as JSON:', response.message.content);
+        console.warn('Failed to parse AI response as JSON:', response.content);
         result = {
           cleanedContent: feedbackText,
           category: 'sosial',
@@ -95,7 +101,7 @@ export class FeedbackClusteringService {
       };
 
     } catch (error) {
-      console.error('Error processing feedback with Ollama:', error);
+      console.error('Error processing feedback with Claude:', error);
       return {
         cleanedContent: feedbackText,
         category: 'sosial',
@@ -169,16 +175,22 @@ export class FeedbackClusteringService {
         Respond ONLY with valid JSON. No markdown, no explanations.
       `;
 
-      const response = await ollama.chat({
+      const response = await anthropic.messages.create({
         model: this.model,
-        messages: [{ role: 'user', content: prompt }],
-        stream: false,
+        max_tokens: 1024,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
       });
 
       try {
-        return JSON.parse(response.message.content);
+        const content = response.content[0].type === 'text' ? response.content[0].text : '';
+        return JSON.parse(content);
       } catch (parseError) {
-        console.warn('Failed to parse clustering response:', response.message.content);
+        console.warn('Failed to parse clustering response:', response.content);
         return {
           suggestedClusterId: null,
           shouldCreateNewCluster: true,
@@ -229,16 +241,22 @@ export class FeedbackClusteringService {
         Respond ONLY with valid JSON.
       `;
 
-      const response = await ollama.chat({
+      const response = await anthropic.messages.create({
         model: this.model,
-        messages: [{ role: 'user', content: prompt }],
-        stream: false,
+        max_tokens: 512,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
       });
 
       try {
-        return JSON.parse(response.message.content);
+        const content = response.content[0].type === 'text' ? response.content[0].text : '';
+        return JSON.parse(content);
       } catch (parseError) {
-        console.warn('Failed to parse cluster name response:', response.message.content);
+        console.warn('Failed to parse cluster name response:', response.content);
         return {
           name: `Cluster ${feedbacks[0]?.category || 'Umum'}`,
           description: 'Kumpulan masukan dengan tema serupa',
@@ -259,13 +277,18 @@ export class FeedbackClusteringService {
   // Method for generating responses (used by report generator)
   async generateResponse(prompt) {
     try {
-      const response = await ollama.chat({
+      const response = await anthropic.messages.create({
         model: this.model,
-        messages: [{ role: 'user', content: prompt }],
-        stream: false,
+        max_tokens: 4096,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
       });
 
-      return response.message.content;
+      return response.content[0].type === 'text' ? response.content[0].text : '';
     } catch (error) {
       console.error('Error generating response:', error);
       throw error;
@@ -280,9 +303,9 @@ export async function analyzeMediaWithAI(base64Data, mimeType, fileName) {
   const isImage = mimeType.startsWith('image/');
   
   try {
-    // Check if Ollama is disabled via environment variable
-    if (process.env.OLLAMA_HOST === 'disabled') {
-      console.log('Ollama disabled via environment variable, using fallback analysis');
+    // Check if Claude API key is not set
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.log('Claude API key not set, using fallback analysis');
       return generateFallbackAnalysis(fileName, mimeType);
     }
 
@@ -350,38 +373,54 @@ export async function analyzeMediaWithAI(base64Data, mimeType, fileName) {
     Respond ONLY with JSON. No markdown, no explanations.
     `;
 
-      // Use the same model and options as voice feedback processing
-      const response = await ollama.chat({
-        model: 'llama3.2:latest',
-        messages: [{ role: 'user', content: prompt }],
-        stream: false,
-        options: {
-          temperature: 0.7,
-          top_p: 0.9,
-        }
-      });
-
-      let result;
-      try {
-        // Try to parse JSON response with same logic as voice feedback
-        const content = response.message.content.trim();
-        
-        // Sometimes LLM wraps JSON in markdown code blocks
-        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
-                         content.match(/```\n([\s\S]*?)\n```/) ||
-                         [null, content];
-        
-        result = JSON.parse(jsonMatch[1] || content);
-        
-        // Validate required fields
-        if (!result.title || !result.content) {
-          throw new Error('Missing required fields');
-        }
-        
-      } catch (parseError) {
-        console.warn('Failed to parse AI response as JSON:', response.message.content);
-        result = generateFallbackAnalysis(fileName, mimeType, isImage).data;
+    // Prepare image content for Claude
+    const imageContent = {
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: mimeType,
+        data: base64Data
       }
+    };
+
+    const response = await anthropic.messages.create({
+      model: this.model,
+      max_tokens: 2048,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: prompt
+            },
+            imageContent
+          ]
+        }
+      ]
+    });
+
+    let result;
+    try {
+      // Try to parse JSON response with same logic as voice feedback
+      const content = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
+      
+      // Sometimes LLM wraps JSON in markdown code blocks
+      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
+                       content.match(/```\n([\s\S]*?)\n```/) ||
+                       [null, content];
+      
+      result = JSON.parse(jsonMatch[1] || content);
+      
+      // Validate required fields
+      if (!result.title || !result.content) {
+        throw new Error('Missing required fields');
+      }
+      
+    } catch (parseError) {
+      console.warn('Failed to parse AI response as JSON:', response.content);
+      result = generateFallbackAnalysis(fileName, mimeType, isImage).data;
+    }
 
     return {
       success: true,
@@ -394,7 +433,7 @@ export async function analyzeMediaWithAI(base64Data, mimeType, fileName) {
   }
 }
 
-// Fallback analysis function when Ollama is not available
+// Fallback analysis function when Claude is not available
 function generateFallbackAnalysis(fileName, mimeType, isImage) {
   const fileType = 'gambar';
   const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';

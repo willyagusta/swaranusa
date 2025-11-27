@@ -38,8 +38,8 @@ Swaranusa adalah platform inovatif yang memberdayakan warga Indonesia untuk meng
 - **bcryptjs** - Password hashing
 
 ### AI & Machine Learning
-- **Ollama** - Local LLM inference server
-- **Llama 3.2** - Language model untuk:
+- **Anthropic Claude** - Cloud-based LLM API
+- **Claude 3.5 Sonnet** - Language model untuk:
   - Pemrosesan dan pembersihan teks masukan
   - Ekstraksi metadata (kategori, urgensi, sentimen, tags)
   - Analisis gambar
@@ -84,7 +84,7 @@ swaranusa-app/
 │   │   ├── auth.js             # Authentication utilities
 │   │   ├── blockchain.js       # Blockchain service
 │   │   ├── db.js               # Database connection
-│   │   ├── ollama.js           # AI/LLM service
+│   │   ├── ollama.js           # AI/LLM service (uses Claude API)
 │   │   ├── reportGenerator.js  # Report generation
 │   │   ├── schema.js           # Database schema (Drizzle)
 │   │   └── validations.js      # Input validation
@@ -104,7 +104,7 @@ swaranusa-app/
 
 - **Node.js** 18+ dan npm/yarn/pnpm
 - **PostgreSQL database** (Neon atau self-hosted)
-- **Ollama** dengan model Llama 3.2 terinstall
+- **Anthropic API Key** untuk Claude API (dapatkan di https://console.anthropic.com)
 - **Ethereum wallet** dengan Sepolia ETH (untuk blockchain verification)
 - **Hardhat** (untuk development smart contracts)
 
@@ -142,9 +142,8 @@ ADMIN_WALLET_PRIVATE_KEY=your-private-key-here
 FEEDBACK_CONTRACT_ADDRESS=your-contract-address-here
 
 # AI/LLM
-OLLAMA_HOST=http://localhost:11434
-# Set to 'disabled' to disable Ollama and use fallback processing
-# OLLAMA_HOST=disabled
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+# Get your API key from https://console.anthropic.com
 ```
 
 4. **Setup database**
@@ -155,14 +154,13 @@ Pastikan database PostgreSQL sudah dibuat, kemudian jalankan migrasi:
 npx drizzle-kit push
 ```
 
-5. **Setup Ollama**
+5. **Setup Claude API**
 
-Install Ollama dan download model:
+Dapatkan API key dari Anthropic:
 
-```bash
-# Install Ollama (lihat https://ollama.ai)
-ollama pull llama3.2:latest
-```
+1. Daftar/login di https://console.anthropic.com
+2. Buat API key baru
+3. Tambahkan ke `.env.local` sebagai `ANTHROPIC_API_KEY`
 
 6. **Setup Blockchain (Optional)**
 
@@ -326,7 +324,7 @@ Pastikan semua environment variables di `.env.local` juga diset di platform depl
 
 ## 🙏 Acknowledgments
 
-- Ollama untuk LLM inference
+- Anthropic untuk Claude AI API
 - Ethereum Foundation untuk blockchain infrastructure
 - Next.js team untuk framework yang powerful
 - Komunitas open source Indonesia
